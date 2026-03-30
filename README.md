@@ -1,12 +1,5 @@
-# NT114-DACN
-# 📋 KẾ HOẠCH CHI TIẾT TỪNG BƯỚC — NT114-DACN
-
-> **Thời hạn: 1 tháng (4 tuần) · 2 thành viên**
-> Tài liệu này hướng dẫn CỤ THỂ từng việc cần làm. Đọc xong là biết phải làm gì, không cần hỏi thêm.
-
----
-
-## 🎯 HIỂU ĐỒ ÁN TRONG 5 PHÚT
+# 📋 KẾ HOẠCH CHI TIẾT  — NT114-DACN
+## 🎯 HIỂU ĐỒ ÁN 
 
 **Đồ án này làm gì?**  
 Xây dựng 1 hệ thống hoàn chỉnh trên AWS, gồm:
@@ -23,6 +16,287 @@ Xây dựng 1 hệ thống hoàn chỉnh trên AWS, gồm:
 - 🟢 **TV2 (App, Monitoring & AI):** Online Boutique, Ingress, Grafana, Python AI code, Load testing
 
 **Tin tốt:** Tất cả 43 file code đã được viết sẵn. Việc còn lại là **hiểu**, **review**, **chạy**, **chỉnh sửa nếu cần**, và **viết báo cáo**.
+
+---
+
+## 🏗️ SƠ ĐỒ KIẾN TRÚC HỆ THỐNG
+
+### Sơ đồ tổng thể — Tất cả thành phần và kết nối
+
+```mermaid
+graph TB
+    subgraph USERS["👤 Người dùng"]
+        Browser["Trình duyệt"]
+    end
+
+    subgraph INGRESS["🌐 Ingress NGINX (TV2)"]
+        LB["AWS Load Balancer"]
+        NG["NGINX Controller x2"]
+    end
+
+    subgraph AWS["☁️ AWS Cloud"]
+        subgraph VPC["VPC 10.0.0.0/16 (TV1 - Terraform)"]
+            subgraph PUB["Public Subnets"]
+                NAT["NAT Gateway"]
+                IGW["Internet Gateway"]
+            end
+            subgraph PRI["Private Subnets"]
+                subgraph EKS["EKS Cluster K8s 1.29 (TV1)"]
+                    subgraph NS1["namespace: online-boutique"]
+                        FE["frontend (Go)"]
+                        CART["cartservice (C#)"]
+                        PROD["productcatalog (Go)"]
+                        PAY["paymentservice (Node)"]
+                        SHIP["shippingservice (Go)"]
+                        EMAIL["emailservice (Python)"]
+                        CHECK["checkoutservice (Go)"]
+                        CURR["currencyservice (Node)"]
+                        REC["recommendationservice (Python)"]
+                        AD["adservice (Java)"]
+                        LOAD["loadgenerator"]
+                    end
+                    subgraph NS2["namespace: monitoring"]
+                        PROM["Prometheus (TV1)"]
+                        GRAF["Grafana (TV2)"]
+                        AM["Alertmanager (TV1)"]
+                        NE["Node Exporter"]
+                        KSM["kube-state-metrics"]
+                    end
+                    subgraph NS3["namespace: argocd"]
+                        ARGO["ArgoCD Server (TV1)"]
+                    end
+                    subgraph NS4["namespace: anomaly-detection"]
+                        CRON["CronJob AI (TV2 code, TV1 deploy)"]
+                    end
+                end
+            end
+        end
+    end
+
+    subgraph ALERTS["📱 Kênh cảnh báo"]
+        SLACK["Slack (TV1)"]
+        TELE["Telegram (TV2)"]
+    end
+
+    subgraph GIT["📦 GitHub"]
+        REPO["NT114-DACN repo"]
+    end
+
+    Browser --> LB --> NG
+    NG --> FE
+    NG --> GRAF
+    NG --> ARGO
+
+    FE --> CART & PROD & CHECK & CURR & REC & AD
+    CHECK --> PAY & SHIP & EMAIL & CART & CURR
+
+    PROM -->|"scrape metrics mỗi 30s"| NS1
+    PROM -->|"scrape"| NE & KSM
+    PROM --> GRAF
+    PROM --> AM
+    AM -->|"static alerts"| SLACK
+
+    CRON -->|"query API 24h data"| PROM
+    CRON -->|"dynamic alerts"| SLACK & TELE
+
+    ARGO -->|"watch & auto-sync"| REPO
+    REPO -->|"manifest changes"| ARGO
+    ARGO -->|"deploy"| NS1 & NS2 & NS4
+
+    PRI --> NAT --> IGW
+
+    style NS1 fill:#e8f5e9
+    style NS2 fill:#e3f2fd
+    style NS3 fill:#fff3e0
+    style NS4 fill:#fce4ec
+    style CRON fill:#f48fb1
+    style PROM fill:#64b5f6
+    style GRAF fill:#81c784
+    style ARGO fill:#ffb74d
+```
+
+### Thứ tự xây dựng — Cái nào phải làm trước cái nào
+
+```mermaid
+graph LR
+    subgraph PHASE1["⚡ TUẦN 1: Nền tảng"]
+        A1["1. AWS Account<br/>+ IAM User"] --> A2["2. Terraform<br/>(VPC + EKS)"]
+        A2 --> A3["3. kubectl<br/>kết nối cluster"]
+        A3 --> A4["4. Metrics Server"]
+    end
+
+    subgraph PHASE2["🚀 TUẦN 1-2: Ứng dụng"]
+        B1["5. Namespaces<br/>(4 cái)"] --> B2["6. Online Boutique<br/>(11 pods)"]
+        B2 --> B3["7. Ingress NGINX<br/>(LoadBalancer)"]
+        B1 --> B4["8. ArgoCD<br/>(GitOps)"]
+    end
+
+    subgraph PHASE3["📊 TUẦN 2: Monitoring"]
+        C1["9. Prometheus<br/>Stack (Helm)"] --> C2["10. Alertmanager<br/>+ Slack webhook"]
+        C1 --> C3["11. Grafana<br/>+ 2 Dashboards"]
+        C2 --> C4["12. 9 Alert<br/>Rules tĩnh"]
+    end
+
+    subgraph PHASE4["🧠 TUẦN 2-3: AI"]
+        D1["13. Python code<br/>test locally"] --> D2["14. Docker<br/>build + push ECR"]
+        D2 --> D3["15. ConfigMap<br/>+ Secret"]
+        D3 --> D4["16. CronJob<br/>deploy + test"]
+        D4 --> D5["17. Telegram Bot<br/>nhận alerts"]
+    end
+
+    subgraph PHASE5["🔥 TUẦN 3: Testing"]
+        E1["18. CPU Stress<br/>Test"] --> E3["20. 5-Phase<br/>Automated Test"]
+        E2["19. Memory Stress<br/>Test"] --> E3
+        E4["21. Locust Load<br/>Test 50→500"]
+        E3 --> E5["22. So sánh<br/>Static vs AI"]
+    end
+
+    A4 --> B1
+    B2 --> C1
+    C1 --> D1
+    C4 --> E1
+    D4 --> E1
+
+    style PHASE1 fill:#fff9c4
+    style PHASE2 fill:#e8f5e9
+    style PHASE3 fill:#e3f2fd
+    style PHASE4 fill:#fce4ec
+    style PHASE5 fill:#fff3e0
+```
+
+> [!IMPORTANT]
+> **Phải làm theo thứ tự!** Không thể cài Prometheus (bước 9) nếu chưa có EKS cluster (bước 2). Không thể test AI (bước 13) nếu chưa có Prometheus (bước 9).
+
+### Luồng dữ liệu giám sát — Dữ liệu chạy từ đâu đến đâu
+
+```mermaid
+flowchart LR
+    subgraph SOURCES["📦 Nguồn dữ liệu"]
+        PODS["Pods/Containers<br/>CPU, RAM, Network"]
+        NODES["Worker Nodes<br/>CPU, RAM, Disk"]
+    end
+
+    subgraph COLLECT["📥 Thu thập"]
+        NE2["Node Exporter<br/>(metrics nodes)"]
+        KSM2["kube-state-metrics<br/>(metrics pods/deployments)"]
+        PROM2["Prometheus<br/>scrape mỗi 30s<br/>lưu 15 ngày"]
+    end
+
+    subgraph STATIC["⚡ Cảnh báo tĩnh (TV1)"]
+        RULES["9 Alert Rules<br/>VD: CPU > 80%"]
+        AM2["Alertmanager<br/>route theo severity"]
+        S1["Slack<br/>#critical-alerts<br/>#monitoring-alerts"]
+    end
+
+    subgraph DYNAMIC["🧠 Cảnh báo AI (TV2)"]
+        FETCH["prometheus_client.py<br/>Lấy data 24h"]
+        IF["detector.py<br/>Isolation Forest<br/>contamination=0.05"]
+        THRESH["Dynamic Threshold<br/>mean ± 2σ"]
+        ALERT2["alerting.py<br/>Block Kit / Markdown"]
+        S2["Slack + Telegram"]
+    end
+
+    subgraph VISUAL["📊 Hiển thị (TV2)"]
+        GRAF2["Grafana<br/>2 Dashboards<br/>8 panels"]
+    end
+
+    PODS --> KSM2 --> PROM2
+    NODES --> NE2 --> PROM2
+
+    PROM2 --> RULES --> AM2 --> S1
+    PROM2 --> GRAF2
+    PROM2 -->|"API query_range"| FETCH --> IF --> THRESH --> ALERT2 --> S2
+
+    style STATIC fill:#e3f2fd
+    style DYNAMIC fill:#fce4ec
+    style VISUAL fill:#e8f5e9
+```
+
+---
+
+## 📖🔧 PHÂN CHIA: LÝ THUYẾT vs THỰC HÀNH
+
+> **📖 = Lý thuyết** (nghiên cứu, tìm hiểu, viết báo cáo — làm trên Word/Google Docs)
+> **🔧 = Thực hành** (gõ lệnh, chạy code, cấu hình — làm trên terminal/IDE)
+
+### Tuần 1 — Hạ tầng & Ứng dụng
+
+| # | Việc | Loại | Ai | Chi tiết |
+|---|------|------|-----|---------|
+| 1 | Tìm hiểu AWS, VPC, EKS là gì | 📖 Lý thuyết | 🔵 TV1 | Đọc docs AWS, hiểu VPC = mạng ảo, EKS = Kubernetes managed |
+| 2 | Tìm hiểu Terraform, IaC là gì | 📖 Lý thuyết | 🔵 TV1 | Đọc terraform.io/intro, hiểu: viết .tf → plan → apply |
+| 3 | Cài 7 tools | 🔧 Thực hành | Cả 2 | AWS CLI, Terraform, kubectl, Helm, Docker, Python, Git |
+| 4 | Tạo AWS account + IAM user | 🔧 Thực hành | 🔵 TV1 | Console → IAM → tạo user + access key |
+| 5 | Chạy Terraform (tạo hạ tầng) | 🔧 Thực hành | 🔵 TV1 | `terraform init → plan → apply` (~20 phút) |
+| 6 | Kết nối kubectl | 🔧 Thực hành | 🔵 TV1 | `aws eks update-kubeconfig`, `kubectl get nodes` |
+| 7 | Nghiên cứu Kubernetes concepts | 📖 Lý thuyết | 🟢 TV2 | Pod, Service, Deployment, Namespace, kubectl |
+| 8 | Nghiên cứu Microservices architecture | 📖 Lý thuyết | 🟢 TV2 | So sánh monolith vs microservices, gRPC vs REST |
+| 9 | Nghiên cứu Google Online Boutique | 📖 Lý thuyết | 🟢 TV2 | 11 services, ngôn ngữ, giao tiếp → viết vào Chương 2 |
+| 10 | Viết Chương 1 (Giới thiệu) | 📖 Lý thuyết | 🟢 TV2 | Đặt vấn đề, mục tiêu, phạm vi, phương pháp |
+| 11 | Viết Chương 2 (Cơ sở lý thuyết) | 📖 Lý thuyết | 🟢 TV2 | K8s, Microservices, GitOps, Observability |
+| 12 | Tạo 4 namespaces | 🔧 Thực hành | 🟢 TV2 | `kubectl apply -f namespaces.yaml` |
+| 13 | Deploy Online Boutique | 🔧 Thực hành | 🟢 TV2 | `kubectl apply -k`, kiểm tra 11 pods Running |
+| 14 | Cài Ingress NGINX (Helm) | 🔧 Thực hành | 🟢 TV2 | `helm install`, apply ingress rules |
+| 15 | Tìm hiểu GitOps, ArgoCD là gì | 📖 Lý thuyết | 🔵 TV1 | GitOps = Git là single source of truth |
+| 16 | Cài ArgoCD + 3 Applications | 🔧 Thực hành | 🔵 TV1 | Chạy `install.sh`, apply 3 YAML apps |
+
+### Tuần 2 — Monitoring & AI
+
+| # | Việc | Loại | Ai | Chi tiết |
+|---|------|------|-----|---------|
+| 17 | Tìm hiểu Prometheus architecture | 📖 Lý thuyết | 🔵 TV1 | Scrape model, TSDB, PromQL query language |
+| 18 | Tìm hiểu Alertmanager routing | 📖 Lý thuyết | 🔵 TV1 | Routes, receivers, inhibit rules, severity levels |
+| 19 | Cài Prometheus Stack (Helm) | 🔧 Thực hành | 🔵 TV1 | Chạy `install.sh`, kiểm tra pods monitoring |
+| 20 | Tạo Slack workspace + webhook | 🔧 Thực hành | 🔵 TV1 | slack.com → Incoming Webhook → lấy URL |
+| 21 | Cấu hình Alertmanager + apply | 🔧 Thực hành | 🔵 TV1 | Sửa YAML thay webhook URL → kubectl apply |
+| 22 | Apply 9 alert rules | 🔧 Thực hành | 🔵 TV1 | `kubectl apply -f alert-rules.yaml` |
+| 23 | Tìm hiểu Grafana, PromQL | 📖 Lý thuyết | 🟢 TV2 | Dashboard panels, datasource, query editor |
+| 24 | Import 2 Grafana dashboards | 🔧 Thực hành | 🟢 TV2 | Upload JSON, chọn datasource, kiểm tra panels |
+| 25 | Tìm hiểu Isolation Forest algorithm | 📖 Lý thuyết | 🟢 TV2 | Unsupervised ML, contamination, anomaly score → Chương 2 |
+| 26 | Tìm hiểu Dynamic Threshold (mean ± 2σ) | 📖 Lý thuyết | 🟢 TV2 | So sánh static threshold vs dynamic → Chương 2 |
+| 27 | Đọc hiểu Python source code AI | 📖 Lý thuyết | 🟢 TV2 | 6 files: config → prometheus_client → detector → alerting → main |
+| 28 | Test Python AI code locally | 🔧 Thực hành | 🟢 TV2 | venv, pip install, port-forward, `python -m src.main` |
+| 29 | Build Docker image + push ECR | 🔧 Thực hành | 🟢 TV2 | `docker build`, `docker push`, sửa cronjob.yaml |
+| 30 | Tạo Telegram Bot | 🔧 Thực hành | 🔵 TV1 | @BotFather → /newbot → lấy token + chat ID |
+| 31 | Deploy CronJob + ConfigMap + Secret | 🔧 Thực hành | 🔵 TV1 | 3 kubectl apply, test job, xem logs |
+
+### Tuần 3 — Testing & So sánh
+
+| # | Việc | Loại | Ai | Chi tiết |
+|---|------|------|-----|---------|
+| 32 | Tìm hiểu Chaos Engineering | 📖 Lý thuyết | 🔵 TV1 | Netflix Chaos Monkey, mục đích, phương pháp → Chương 4 |
+| 33 | Chạy CPU stress test | 🔧 Thực hành | 🔵 TV1 | `kubectl apply`, chụp Grafana, check Slack |
+| 34 | Chạy Memory stress test | 🔧 Thực hành | 🔵 TV1 | `kubectl apply`, chụp Grafana, check alerts |
+| 35 | Chạy 5-phase automated test | 🔧 Thực hành | 🔵 TV1 | `./run-chaos-test.sh`, chụp screenshot mỗi phase |
+| 36 | Ghi bảng so sánh Static vs AI | 📖 Lý thuyết | 🔵 TV1 | Detection time, false positives, accuracy → Chương 4 |
+| 37 | Tìm hiểu Load Testing (Locust) | 📖 Lý thuyết | 🟢 TV2 | User simulation, spawn rate, percentile → Chương 4 |
+| 38 | Chạy Locust load test (50/200/500) | 🔧 Thực hành | 🟢 TV2 | `docker compose up`, chạy 3 kịch bản, export kết quả |
+| 39 | Phân tích kết quả + AI accuracy | 📖 Lý thuyết | 🟢 TV2 | TP, FP, FN, so sánh 3 mức tải → viết nhận xét |
+| 40 | Test GitOps workflow ArgoCD | 🔧 Thực hành | 🔵 TV1 | Sửa manifest → push → xem auto-sync |
+
+### Tuần 4 — Báo cáo & Demo
+
+| # | Việc | Loại | Ai | Chi tiết |
+|---|------|------|-----|---------|
+| 41 | Viết Chương 3 (Thiết kế hệ thống) | 📖 Lý thuyết | 🔵 TV1 | Kiến trúc, Terraform, ArgoCD, Prometheus flow |
+| 42 | Viết Chương 5 (Kết luận) | 📖 Lý thuyết | 🔵 TV1 | Kết quả, hạn chế, hướng phát triển |
+| 43 | Viết Chương 4 (Triển khai & Đánh giá) | 📖 Lý thuyết | 🟢 TV2 | Screenshots, bảng kết quả, nhận xét |
+| 44 | Làm slide thuyết trình (~20 slides) | 📖 Lý thuyết | 🟢 TV2 | Tóm tắt + screenshots + demo plan |
+| 45 | Cập nhật docs/ và README | 📖 Lý thuyết | Cả 2 | architecture.md, setup-guide.md |
+| 46 | Tập demo sống | 🔧 Thực hành | Cả 2 | kubectl, Grafana, ArgoCD, chaos test, alerts |
+| 47 | terraform destroy (sau nộp) | 🔧 Thực hành | 🔵 TV1 | Xóa hạ tầng AWS tránh tốn phí |
+
+### Tổng kết phân chia
+
+| | 📖 Lý thuyết | 🔧 Thực hành | Tổng |
+|---|---|---|---|
+| 🔵 **TV1** | 7 items | 13 items | **20 items** |
+| 🟢 **TV2** | 10 items | 9 items | **19 items** |
+| 🟡 **Chung** | 1 item | 4 items | **5 items** |
+
+> TV1 thiên về **thực hành** (chạy Terraform, cài tools, deploy).
+> TV2 thiên về **lý thuyết + viết báo cáo** (nghiên cứu, phân tích, viết chương).
+> Cả hai đều có cả lý thuyết lẫn thực hành.
 
 ---
 
