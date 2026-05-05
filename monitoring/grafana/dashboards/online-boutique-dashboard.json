@@ -1,0 +1,282 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Requests/sec",
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"online-boutique\"}[5m]))",
+          "legendFormat": "{{ app }}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (app) (rate(grpc_server_handled_total{namespace=\"online-boutique\"}[5m]))",
+          "legendFormat": "{{ app }} (gRPC)",
+          "refId": "B"
+        }
+      ],
+      "title": "Request Rate by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Errors/sec",
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"online-boutique\", status=~\"5..\"}[5m]))",
+          "legendFormat": "{{ app }} (HTTP 5xx)",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (app) (rate(grpc_server_handled_total{namespace=\"online-boutique\", grpc_code!=\"OK\"}[5m]))",
+          "legendFormat": "{{ app }} (gRPC errors)",
+          "refId": "B"
+        }
+      ],
+      "title": "Error Rate by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Latency (seconds)",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 9 },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (app, le) (rate(http_server_requests_seconds_bucket{namespace=\"online-boutique\"}[5m])))",
+          "legendFormat": "{{ app }} (HTTP P99)",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (app, le) (rate(grpc_server_handling_seconds_bucket{namespace=\"online-boutique\"}[5m])))",
+          "legendFormat": "{{ app }} (gRPC P99)",
+          "refId": "B"
+        }
+      ],
+      "title": "Response Time P99",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Restarts",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": { "group": "A", "mode": "normal" }
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (pod) (kube_pod_container_status_restarts_total{namespace=\"online-boutique\"})",
+          "legendFormat": "{{ pod }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Pod Restart Count",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "CPU Cores",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 18 },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"online-boutique\", container!=\"\"}[5m]))",
+          "legendFormat": "{{ pod }}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Usage by Pod",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Memory",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 18 },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"online-boutique\", container!=\"\"})",
+          "legendFormat": "{{ pod }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory Usage by Pod",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["online-boutique", "application", "microservices"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Online Boutique Application",
+  "uid": "online-boutique-app",
+  "version": 1
+}
