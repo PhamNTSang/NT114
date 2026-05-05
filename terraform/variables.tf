@@ -58,7 +58,7 @@ variable "eks_node_instance_type" {
 variable "eks_node_desired_size" {
   description = "So luong worker nodes mong muon"
   type        = number
-  default     = 8
+  default     = 15
 }
 
 variable "eks_node_min_size" {
@@ -70,5 +70,5 @@ variable "eks_node_min_size" {
 variable "eks_node_max_size" {
   description = "So luong worker nodes toi da"
   type        = number
-  default     = 10
+  default     = 16
 }
