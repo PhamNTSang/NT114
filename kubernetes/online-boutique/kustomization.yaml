@@ -1,0 +1,6 @@
+# Tao ung dung online boutique trong namespace online-boutique
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: online-boutique
+resources:
+  - https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/main/release/kubernetes-manifests.yaml
