@@ -1,0 +1,35 @@
+# Tao Namespace cho ung dung chinh
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: online-boutique
+  labels:
+    name: online-boutique
+    managed-by: terraform
+---
+# Tao Namespace cho he thong giam sat 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
+    managed-by: terraform
+---
+# Tao Namespace cho ArgoCD
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    name: argocd
+    managed-by: terraform
+---
+# Tao Namespace cho he thong phat hien bat thuong
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: anomaly-detection
+  labels:
+    name: anomaly-detection
+    managed-by: terraform
