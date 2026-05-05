@@ -10,7 +10,7 @@ private_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
 public_subnet_cidrs  = ["10.0.101.0/24", "10.0.102.0/24"]
 
 # Cau hinh EKS
-eks_node_instance_type = "t3.micro" 
-eks_node_min_size     = 2
-eks_node_desired_size = 8
-eks_node_max_size     = 10
+eks_node_instance_type = "c7i-flex.large"
+eks_node_desired_size = 3
+eks_node_min_size     = 3
+eks_node_max_size     = 4

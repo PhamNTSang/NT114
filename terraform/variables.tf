@@ -52,23 +52,23 @@ variable "eks_cluster_version" {
 variable "eks_node_instance_type" {
   description = "Loai EC2 instance cho EKS worker nodes"
   type        = string
-  default     = "t3.micro"
+  default     = "c7i-flex.large"
 }
 
 variable "eks_node_desired_size" {
   description = "So luong worker nodes mong muon"
   type        = number
-  default     = 15
+  default     = 3
 }
 
 variable "eks_node_min_size" {
   description = "So luong worker nodes toi thieu"
   type        = number
-  default     = 2
+  default     = 3
 }
 
 variable "eks_node_max_size" {
   description = "So luong worker nodes toi da"
   type        = number
-  default     = 16
+  default     = 4
 }
