@@ -1,18 +1,28 @@
-# Tao Security group cho EKS control plane va worker nodes
+locals {
+  common_tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    Terraform   = "true"
+  }
+}
+
+# ============================================================
+# Security Group: EKS Control Plane
+# ============================================================
 resource "aws_security_group" "eks_cluster" {
   name        = "${var.project_name}-${var.environment}-eks-cluster-sg"
   description = "Security group cho EKS cluster control plane"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
-# Cho phep control plane giao tiep voi worker nodes tren port 443
- ingress {
+  # Cho phep control plane nhan ket noi HTTPS tu trong VPC
+  ingress {
     description = "HTTPS tu VPC"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr]
   }
-  # Cho phep tat ca luu luong di ra
+
   egress {
     description = "Cho phep tat ca luu luong di ra"
     from_port   = 0
@@ -26,13 +36,15 @@ resource "aws_security_group" "eks_cluster" {
   })
 }
 
-# Security group cho EKS worker nodes
+# ============================================================
+# Security Group: EKS Worker Nodes
+# ============================================================
 resource "aws_security_group" "eks_nodes" {
   name        = "${var.project_name}-${var.environment}-eks-nodes-sg"
   description = "Security group cho EKS worker nodes"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
-  # Cho phep worker nodes giao tiep voi nhau 
+  # Cho phep worker nodes giao tiep noi bo voi nhau
   ingress {
     description = "Giao tiep giua cac worker nodes"
     from_port   = 0
@@ -40,8 +52,9 @@ resource "aws_security_group" "eks_nodes" {
     protocol    = "-1"
     self        = true
   }
-    # Cho phep worker nodes giao tiep voi control plane tren port 443
-    ingress {
+
+  # Cho phep worker nodes nhan ket noi HTTPS tu control plane
+  ingress {
     description     = "HTTPS tu EKS cluster control plane"
     from_port       = 443
     to_port         = 443
@@ -58,7 +71,6 @@ resource "aws_security_group" "eks_nodes" {
     security_groups = [aws_security_group.eks_cluster.id]
   }
 
-  # Cho phep tat ca luu luong di ra
   egress {
     description = "Cho phep tat ca luu luong di ra"
     from_port   = 0
@@ -72,13 +84,14 @@ resource "aws_security_group" "eks_nodes" {
   })
 }
 
-# Tao Security Group ccho viec giam sat bang Grafana va Prometheus
+# ============================================================
+# Security Group: Monitoring (Prometheus, Grafana, Alertmanager)
+# ============================================================
 resource "aws_security_group" "monitoring" {
   name        = "${var.project_name}-${var.environment}-monitoring-sg"
   description = "Security group cho he thong monitoring (Prometheus, Grafana, Alertmanager)"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
-  # Prometheus - Thu thap metrics tu EKS cluster
   ingress {
     description = "Prometheus tu VPC"
     from_port   = 9090
@@ -87,7 +100,6 @@ resource "aws_security_group" "monitoring" {
     cidr_blocks = [var.vpc_cidr]
   }
 
-  # Grafana - Dashboard giam sat 
   ingress {
     description = "Grafana tu VPC"
     from_port   = 3000
@@ -96,7 +108,6 @@ resource "aws_security_group" "monitoring" {
     cidr_blocks = [var.vpc_cidr]
   }
 
-  # Alertmanager - Quan ly canh bao
   ingress {
     description = "Alertmanager tu VPC"
     from_port   = 9093
@@ -105,7 +116,6 @@ resource "aws_security_group" "monitoring" {
     cidr_blocks = [var.vpc_cidr]
   }
 
-  # Cho phep tat ca luu luong di ra
   egress {
     description = "Cho phep tat ca luu luong di ra"
     from_port   = 0
@@ -118,4 +128,3 @@ resource "aws_security_group" "monitoring" {
     Name = "${var.project_name}-${var.environment}-monitoring-sg"
   })
 }
-
