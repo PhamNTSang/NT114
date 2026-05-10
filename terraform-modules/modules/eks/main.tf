@@ -1,4 +1,14 @@
-# Cau hinh IAM Role cho EKS cluster control plane
+locals {
+  common_tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    Terraform   = "true"
+  }
+}
+
+# ============================================================
+# IAM Role: EKS Control Plane
+# ============================================================
 resource "aws_iam_role" "eks_cluster" {
   name = "${var.project_name}-${var.environment}-eks-cluster-role"
 
@@ -19,13 +29,15 @@ resource "aws_iam_role" "eks_cluster" {
     Name = "${var.project_name}-${var.environment}-eks-cluster-role"
   })
 }
-# Gan policy AmazonEKSClusterPolicy cho IAM role cua EKS cluster control plane
+
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.eks_cluster.name
 }
 
-# Cau hinh IAM Role cho EKS worker nodes
+# ============================================================
+# IAM Role: EKS Worker Nodes
+# ============================================================
 resource "aws_iam_role" "eks_nodes" {
   name = "${var.project_name}-${var.environment}-eks-nodes-role"
 
@@ -46,7 +58,7 @@ resource "aws_iam_role" "eks_nodes" {
     Name = "${var.project_name}-${var.environment}-eks-nodes-role"
   })
 }
-# Gan policy AmazonEKSWorkerNodePolicy, AmazonEKS_CNI_Policy va AmazonEC2ContainerRegistryReadOnly cho IAM role cua EKS worker nodes
+
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.eks_nodes.name
@@ -62,7 +74,9 @@ resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
   role       = aws_iam_role.eks_nodes.name
 }
 
-# Cau hinh EKS cluster
+# ============================================================
+# EKS Cluster
+# ============================================================
 resource "aws_eks_cluster" "main" {
   name     = "${var.project_name}-${var.environment}"
   version  = var.eks_cluster_version
@@ -70,10 +84,10 @@ resource "aws_eks_cluster" "main" {
 
   vpc_config {
     subnet_ids = concat(
-      aws_subnet.private[*].id,
-      aws_subnet.public[*].id
+      var.private_subnet_ids,
+      var.public_subnet_ids
     )
-    security_group_ids      = [aws_security_group.eks_cluster.id]
+    security_group_ids      = [var.eks_cluster_sg_id]
     endpoint_private_access = true
     endpoint_public_access  = true
   }
@@ -86,15 +100,18 @@ resource "aws_eks_cluster" "main" {
     aws_iam_role_policy_attachment.eks_cluster_policy
   ]
 }
-# Cau hinh EKS node group
+
+# ============================================================
+# EKS Node Group
+# ============================================================
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.project_name}-${var.environment}-node-group"
   node_role_arn   = aws_iam_role.eks_nodes.arn
-  subnet_ids      = aws_subnet.private[*].id
+  subnet_ids      = var.private_subnet_ids
   instance_types  = [var.eks_node_instance_type]
 
-  ami_type        = "AL2_x86_64"
+  ami_type = "AL2_x86_64"
 
   scaling_config {
     desired_size = var.eks_node_desired_size
@@ -113,6 +130,6 @@ resource "aws_eks_node_group" "main" {
   depends_on = [
     aws_iam_role_policy_attachment.eks_worker_node_policy,
     aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.eks_container_registry_policy
+    aws_iam_role_policy_attachment.eks_container_registry_policy,
   ]
 }

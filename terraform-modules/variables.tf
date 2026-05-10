@@ -1,15 +1,20 @@
-# Cau hinh chung cho cac resource
+# ============================================================
+# Bien chung
+# ============================================================
 variable "aws_region" {
+  description = "AWS region su dung de trien khai resources"
   type        = string
   default     = "ap-southeast-1"
 }
 
 variable "project_name" {
+  description = "Ten du an, dung de dat ten cho cac resource"
   type        = string
   default     = "nt114-dacn"
 }
 
 variable "environment" {
+  description = "Moi truong trien khai (dev, staging, prod)"
   type        = string
   default     = "dev"
 
@@ -18,7 +23,10 @@ variable "environment" {
     error_message = "Gia tri environment phai la dev, staging hoac prod."
   }
 }
-# Cau hinh VPC
+
+# ============================================================
+# Bien cau hinh VPC
+# ============================================================
 variable "vpc_cidr" {
   description = "CIDR block cho VPC"
   type        = string
@@ -42,7 +50,10 @@ variable "public_subnet_cidrs" {
   type        = list(string)
   default     = ["10.0.101.0/24", "10.0.102.0/24"]
 }
-# Cau hinh EKS 
+
+# ============================================================
+# Bien cau hinh EKS
+# ============================================================
 variable "eks_cluster_version" {
   description = "Phien ban Kubernetes cho EKS cluster"
   type        = string

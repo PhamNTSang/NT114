@@ -1,4 +1,3 @@
-
 locals {
   common_tags = {
     Project     = var.project_name
@@ -7,7 +6,9 @@ locals {
   }
 }
 
-# Tao VPC
+# ============================================================
+# VPC
+# ============================================================
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -18,7 +19,9 @@ resource "aws_vpc" "main" {
   })
 }
 
-# Tao Internet Gateway cho VPC de ket noi ra internet
+# ============================================================
+# Internet Gateway
+# ============================================================
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
@@ -27,7 +30,9 @@ resource "aws_internet_gateway" "main" {
   })
 }
 
-# Tao public subnets trong moi AZ
+# ============================================================
+# Subnets
+# ============================================================
 resource "aws_subnet" "public" {
   count = length(var.public_subnet_cidrs)
 
@@ -37,13 +42,12 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = merge(local.common_tags, {
-    Name                                          = "${var.project_name}-${var.environment}-public-${var.availability_zones[count.index]}"
-    "kubernetes.io/role/elb"                      = "1"
+    Name                                                            = "${var.project_name}-${var.environment}-public-${var.availability_zones[count.index]}"
+    "kubernetes.io/role/elb"                                        = "1"
     "kubernetes.io/cluster/${var.project_name}-${var.environment}" = "shared"
   })
 }
 
-# Tao private subnets trong moi AZ (cho EKS worker nodes)
 resource "aws_subnet" "private" {
   count = length(var.private_subnet_cidrs)
 
@@ -52,13 +56,15 @@ resource "aws_subnet" "private" {
   availability_zone = var.availability_zones[count.index]
 
   tags = merge(local.common_tags, {
-    Name                                          = "${var.project_name}-${var.environment}-private-${var.availability_zones[count.index]}"
-    "kubernetes.io/role/internal-elb"             = "1"
+    Name                                                            = "${var.project_name}-${var.environment}-private-${var.availability_zones[count.index]}"
+    "kubernetes.io/role/internal-elb"                              = "1"
     "kubernetes.io/cluster/${var.project_name}-${var.environment}" = "shared"
   })
 }
 
-# Tao NAT Gateway trong public subnet de private subnet co the truy cap internet
+# ============================================================
+# NAT Gateway (dat trong public subnet dau tien)
+# ============================================================
 resource "aws_eip" "nat" {
   domain = "vpc"
 
@@ -68,6 +74,7 @@ resource "aws_eip" "nat" {
 
   depends_on = [aws_internet_gateway.main]
 }
+
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
@@ -79,7 +86,9 @@ resource "aws_nat_gateway" "main" {
   depends_on = [aws_internet_gateway.main]
 }
 
-# Tao route table cho public subnet
+# ============================================================
+# Route Tables
+# ============================================================
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -92,7 +101,7 @@ resource "aws_route_table" "public" {
     Name = "${var.project_name}-${var.environment}-public-rt"
   })
 }
-# Tao route table cho private subnet
+
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
@@ -106,14 +115,16 @@ resource "aws_route_table" "private" {
   })
 }
 
-# Associate public subnets voi public route table
+# ============================================================
+# Route Table Associations
+# ============================================================
 resource "aws_route_table_association" "public" {
   count = length(var.public_subnet_cidrs)
 
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
-# Associate private subnets voi private route table
+
 resource "aws_route_table_association" "private" {
   count = length(var.private_subnet_cidrs)
 
