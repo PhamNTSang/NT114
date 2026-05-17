@@ -1,0 +1,14 @@
+vendor/
+**/.git
+**/.github
+**/.terraform
+**/node_modules
+**/bin
+**/obj
+**/build
+**/__pycache__
+**/*.pyc
+.env
+*.log
+README.md
+vendor/

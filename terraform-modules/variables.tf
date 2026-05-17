@@ -1,6 +1,5 @@
-# ============================================================
+
 # Bien chung
-# ============================================================
 variable "aws_region" {
   description = "AWS region su dung de trien khai resources"
   type        = string
@@ -24,9 +23,8 @@ variable "environment" {
   }
 }
 
-# ============================================================
 # Bien cau hinh VPC
-# ============================================================
+
 variable "vpc_cidr" {
   description = "CIDR block cho VPC"
   type        = string
@@ -51,9 +49,8 @@ variable "public_subnet_cidrs" {
   default     = ["10.0.101.0/24", "10.0.102.0/24"]
 }
 
-# ============================================================
+
 # Bien cau hinh EKS
-# ============================================================
 variable "eks_cluster_version" {
   description = "Phien ban Kubernetes cho EKS cluster"
   type        = string

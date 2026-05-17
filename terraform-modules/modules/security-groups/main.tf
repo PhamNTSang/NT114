@@ -6,9 +6,8 @@ locals {
   }
 }
 
-# ============================================================
+
 # Security Group: EKS Control Plane
-# ============================================================
 resource "aws_security_group" "eks_cluster" {
   name        = "${var.project_name}-${var.environment}-eks-cluster-sg"
   description = "Security group cho EKS cluster control plane"
@@ -36,9 +35,8 @@ resource "aws_security_group" "eks_cluster" {
   })
 }
 
-# ============================================================
+
 # Security Group: EKS Worker Nodes
-# ============================================================
 resource "aws_security_group" "eks_nodes" {
   name        = "${var.project_name}-${var.environment}-eks-nodes-sg"
   description = "Security group cho EKS worker nodes"
@@ -84,9 +82,8 @@ resource "aws_security_group" "eks_nodes" {
   })
 }
 
-# ============================================================
+
 # Security Group: Monitoring (Prometheus, Grafana, Alertmanager)
-# ============================================================
 resource "aws_security_group" "monitoring" {
   name        = "${var.project_name}-${var.environment}-monitoring-sg"
   description = "Security group cho he thong monitoring (Prometheus, Grafana, Alertmanager)"

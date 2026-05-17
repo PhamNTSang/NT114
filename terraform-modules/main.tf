@@ -1,6 +1,4 @@
-# ============================================================
-# Cau hinh Terraform va Provider
-# ============================================================
+# Cau hinhg Terraform va cac provider
 terraform {
   required_version = ">= 1.0"
 
@@ -28,8 +26,7 @@ provider "aws" {
   }
 }
 
-# NOTE: Kubernetes provider phu thuoc vao EKS cluster da duoc tao.
-# Terraform se resolve sau khi module.eks chay xong.
+
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority)
@@ -41,18 +38,14 @@ provider "kubernetes" {
   }
 }
 
-# ============================================================
-# Data Sources
-# ============================================================
+# Lay thong tin ve tai khoan AWS va vung hien tai
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 data "aws_availability_zones" "available" {
   state = "available"
 }
 
-# ============================================================
-# Module: VPC
-# ============================================================
+# module VPC
 module "vpc" {
   source = "./modules/vpc"
 
@@ -64,9 +57,8 @@ module "vpc" {
   public_subnet_cidrs  = var.public_subnet_cidrs
 }
 
-# ============================================================
+
 # Module: Security Groups
-# ============================================================
 module "security_groups" {
   source = "./modules/security-groups"
 
@@ -76,9 +68,9 @@ module "security_groups" {
   vpc_cidr     = var.vpc_cidr
 }
 
-# ============================================================
+
 # Module: EKS
-# ============================================================
+
 module "eks" {
   source = "./modules/eks"
 
