@@ -6,9 +6,8 @@ locals {
   }
 }
 
-# ============================================================
+
 # IAM Role: EKS Control Plane
-# ============================================================
 resource "aws_iam_role" "eks_cluster" {
   name = "${var.project_name}-${var.environment}-eks-cluster-role"
 
@@ -35,9 +34,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster.name
 }
 
-# ============================================================
 # IAM Role: EKS Worker Nodes
-# ============================================================
 resource "aws_iam_role" "eks_nodes" {
   name = "${var.project_name}-${var.environment}-eks-nodes-role"
 
@@ -101,9 +98,8 @@ resource "aws_eks_cluster" "main" {
   ]
 }
 
-# ============================================================
+
 # EKS Node Group
-# ============================================================
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.project_name}-${var.environment}-node-group"

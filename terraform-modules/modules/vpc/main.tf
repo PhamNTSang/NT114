@@ -6,9 +6,8 @@ locals {
   }
 }
 
-# ============================================================
+
 # VPC
-# ============================================================
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -19,9 +18,8 @@ resource "aws_vpc" "main" {
   })
 }
 
-# ============================================================
+
 # Internet Gateway
-# ============================================================
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
@@ -30,9 +28,8 @@ resource "aws_internet_gateway" "main" {
   })
 }
 
-# ============================================================
+
 # Subnets
-# ============================================================
 resource "aws_subnet" "public" {
   count = length(var.public_subnet_cidrs)
 
@@ -62,9 +59,9 @@ resource "aws_subnet" "private" {
   })
 }
 
-# ============================================================
-# NAT Gateway (dat trong public subnet dau tien)
-# ============================================================
+
+# NAT Gateway 
+
 resource "aws_eip" "nat" {
   domain = "vpc"
 
@@ -86,9 +83,8 @@ resource "aws_nat_gateway" "main" {
   depends_on = [aws_internet_gateway.main]
 }
 
-# ============================================================
+
 # Route Tables
-# ============================================================
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -115,9 +111,8 @@ resource "aws_route_table" "private" {
   })
 }
 
-# ============================================================
 # Route Table Associations
-# ============================================================
+
 resource "aws_route_table_association" "public" {
   count = length(var.public_subnet_cidrs)
 

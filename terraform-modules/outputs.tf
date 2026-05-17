@@ -1,6 +1,5 @@
-# ============================================================
+
 # Outputs tu module VPC
-# ============================================================
 output "vpc_id" {
   description = "ID cua VPC"
   value       = module.vpc.vpc_id
@@ -16,9 +15,7 @@ output "public_subnet_ids" {
   value       = module.vpc.public_subnet_ids
 }
 
-# ============================================================
 # Outputs tu module EKS
-# ============================================================
 output "eks_cluster_name" {
   description = "Ten cua EKS cluster"
   value       = module.eks.cluster_name
@@ -39,9 +36,9 @@ output "eks_node_group_name" {
   value       = module.eks.node_group_name
 }
 
-# ============================================================
+
 # Outputs tu module Security Groups
-# ============================================================
+
 output "eks_cluster_sg_id" {
   description = "ID cua Security Group cho EKS control plane"
   value       = module.security_groups.eks_cluster_sg_id
