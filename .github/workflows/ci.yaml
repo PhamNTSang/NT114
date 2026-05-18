@@ -1,0 +1,196 @@
+name: CI - Build, Scan and Update GitOps Manifests
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "apps/**"
+      - "terraform-modules/**"
+      - ".github/workflows/ci.yaml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "terraform-modules/**"
+      - ".github/workflows/ci.yaml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+env:
+  DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME || 'local' }}
+  UPSTREAM_REGISTRY: us-central1-docker.pkg.dev/google-samples/microservices-demo
+
+jobs:
+  source-check:
+    name: Verify service source layout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Check required source files
+        run: |
+          set -euo pipefail
+          required_files=(
+            "apps/frontend/go.mod"
+            "apps/checkoutservice/go.mod"
+            "apps/productcatalogservice/go.mod"
+            "apps/shippingservice/go.mod"
+            "apps/cartservice/src/cartservice.csproj"
+            "apps/adservice/build.gradle"
+            "apps/currencyservice/package.json"
+            "apps/paymentservice/package.json"
+            "apps/emailservice/requirements.txt"
+            "apps/recommendationservice/requirements.txt"
+          )
+
+          missing=0
+          for file in "${required_files[@]}"; do
+            if [[ -f "$file" ]]; then
+              echo "OK: $file"
+            else
+              echo "::error file=$file::Missing required source file"
+              missing=1
+            fi
+          done
+
+          if [[ "$missing" -ne 0 ]]; then
+            echo "One or more required source files are missing. Commit and push the apps/ source folders."
+            exit 1
+          fi
+
+  lint-dockerfiles:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    needs: source-check
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Run Hadolint on all Dockerfiles
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          recursive: true
+          failure-threshold: error
+
+  terraform-check:
+    name: Terraform fmt and validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive terraform-modules
+
+      - name: Validate Terraform modules
+        working-directory: terraform-modules
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+  build-services:
+    name: Build app image - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs:
+      - lint-dockerfiles
+      - terraform-check
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - frontend
+          - cartservice
+          - checkoutservice
+          - currencyservice
+          - emailservice
+          - paymentservice
+          - productcatalogservice
+          - recommendationservice
+          - shippingservice
+          - adservice
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract short SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and optionally push image
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/${{ matrix.service }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.DOCKERHUB_USER }}/${{ matrix.service }}:${{ steps.vars.outputs.short_sha }}
+            ${{ env.DOCKERHUB_USER }}/${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      - name: Scan image with Trivy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKERHUB_USER }}/${{ matrix.service }}:${{ steps.vars.outputs.short_sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+
+  update-gitops-manifests:
+    name: Update GitOps image tags
+    runs-on: ubuntu-latest
+    needs:
+      - build-services
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update Online Boutique image tags
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA::7}"
+          SERVICES="frontend cartservice checkoutservice currencyservice emailservice paymentservice productcatalogservice recommendationservice shippingservice adservice"
+
+          cd kubernetes/online-boutique
+          for service in $SERVICES; do
+            kustomize edit set image \
+              "${UPSTREAM_REGISTRY}/${service}=${DOCKERHUB_USER}/${service}:${SHORT_SHA}"
+          done
+
+      - name: Commit updated manifests
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA::7}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add kubernetes/online-boutique/kustomization.yaml
+          if ! git diff --staged --quiet; then
+            git commit -m "ci: update image tags to ${SHORT_SHA} [skip ci]"
+            git push
+          fi

@@ -74,15 +74,15 @@ module "security_groups" {
 module "eks" {
   source = "./modules/eks"
 
-  project_name            = var.project_name
-  environment             = var.environment
-  eks_cluster_version     = var.eks_cluster_version
-  eks_node_instance_type  = var.eks_node_instance_type
-  eks_node_desired_size   = var.eks_node_desired_size
-  eks_node_min_size       = var.eks_node_min_size
-  eks_node_max_size       = var.eks_node_max_size
+  project_name           = var.project_name
+  environment            = var.environment
+  eks_cluster_version    = var.eks_cluster_version
+  eks_node_instance_type = var.eks_node_instance_type
+  eks_node_desired_size  = var.eks_node_desired_size
+  eks_node_min_size      = var.eks_node_min_size
+  eks_node_max_size      = var.eks_node_max_size
 
-  private_subnet_ids      = module.vpc.private_subnet_ids
-  public_subnet_ids       = module.vpc.public_subnet_ids
-  eks_cluster_sg_id       = module.security_groups.eks_cluster_sg_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  eks_cluster_sg_id  = module.security_groups.eks_cluster_sg_id
 }
