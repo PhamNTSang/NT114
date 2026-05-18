@@ -1,37 +1,36 @@
-# Tao ung dung online boutique trong namespace online-boutique
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: online-boutique
 resources:
-- https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/main/release/kubernetes-manifests.yaml
+  - base.yaml
 images:
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/adservice
-  newName: hoangphuc858903/adservice
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/cartservice
-  newName: hoangphuc858903/cartservice
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/checkoutservice
-  newName: hoangphuc858903/checkoutservice
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/currencyservice
-  newName: hoangphuc858903/currencyservice
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/emailservice
-  newName: hoangphuc858903/emailservice
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/frontend
-  newName: hoangphuc858903/frontend
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/paymentservice
-  newName: hoangphuc858903/paymentservice
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/productcatalogservice
-  newName: hoangphuc858903/productcatalogservice
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/recommendationservice
-  newName: hoangphuc858903/recommendationservice
-  newTag: d4ad63f
-- name: us-central1-docker.pkg.dev/google-samples/microservices-demo/shippingservice
-  newName: hoangphuc858903/shippingservice
-  newTag: d4ad63f
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/adservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/adservice
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/cartservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/cartservice
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/checkoutservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/checkoutservice
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/currencyservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/currencyservice
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/emailservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/emailservice
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/frontend
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/frontend
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/paymentservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/paymentservice
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/productcatalogservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/productcatalogservice
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/recommendationservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/recommendationservice
+    newTag: v0.10.5
+  - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/shippingservice
+    newName: us-central1-docker.pkg.dev/google-samples/microservices-demo/shippingservice
+    newTag: v0.10.5
