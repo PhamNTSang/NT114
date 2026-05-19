@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXTRA_VALUES=()
+
+if [ -f "${SCRIPT_DIR}/alertmanager-slack.local.yaml" ]; then
+  echo "Using local Alertmanager Slack override..."
+  EXTRA_VALUES+=("-f" "${SCRIPT_DIR}/alertmanager-slack.local.yaml")
+fi
+
 echo "=== Installing Prometheus Stack ==="
 
 
@@ -10,7 +18,8 @@ helm repo update
 
 helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
   --namespace monitoring --create-namespace \
-  -f prometheus-values.yaml \
+  -f "${SCRIPT_DIR}/values.yaml" \
+  "${EXTRA_VALUES[@]}" \
   --set grafana.persistence.enabled=false
 
 echo "=== Prometheus Stack installed successfully ==="
