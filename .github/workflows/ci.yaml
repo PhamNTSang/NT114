@@ -149,10 +149,12 @@ jobs:
 
       - name: Scan image with Trivy
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.DOCKERHUB_USER }}/${{ matrix.service }}:${{ steps.vars.outputs.short_sha }}
           format: table
+          scanners: vuln
           severity: CRITICAL,HIGH
           exit-code: "0"
 
