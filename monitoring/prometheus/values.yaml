@@ -17,7 +17,7 @@ grafana:
   enabled: true
   defaultDashboardsEnabled: false
   adminUser: admin
-  adminPassword: changeme-grafana-password
+  adminPassword: admin
   persistence:
     enabled: false
   sidecar:

@@ -349,19 +349,20 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisLabel": "Pods",
-            "drawStyle": "bars",
-            "fillOpacity": 70,
-            "gradientMode": "none",
-            "lineWidth": 1,
-            "showPoints": "never",
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            }
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
           },
           "unit": "short"
         },
@@ -375,17 +376,18 @@
       },
       "id": 6,
       "options": {
-        "legend": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
-          "displayMode": "table",
-          "placement": "right"
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "textMode": "auto"
       },
       "targets": [
         {
@@ -399,7 +401,7 @@
         }
       ],
       "title": "Application Pod Phase Count",
-      "type": "timeseries"
+      "type": "stat"
     },
     {
       "datasource": {
@@ -450,12 +452,12 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"online-boutique\",container!=\"\",image!=\"\"}[5m]))",
-          "legendFormat": "{{ pod }}",
+          "expr": "sum by (workload) (label_replace(rate(container_cpu_usage_seconds_total{namespace=\"online-boutique\",container!=\"\",image!=\"\"}[5m]), \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
+          "legendFormat": "{{ workload }}",
           "refId": "A"
         }
       ],
-      "title": "CPU Usage by Pod",
+      "title": "CPU Usage by Service",
       "type": "timeseries"
     },
     {
@@ -490,11 +492,10 @@
       "options": {
         "legend": {
           "calcs": [
-            "mean",
-            "max"
+            "lastNotNull"
           ],
-          "displayMode": "table",
-          "placement": "bottom"
+          "displayMode": "list",
+          "placement": "right"
         },
         "tooltip": {
           "mode": "multi",
@@ -507,12 +508,12 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"online-boutique\",container!=\"\",image!=\"\"})",
-          "legendFormat": "{{ pod }}",
+          "expr": "sum by (workload) (label_replace(container_memory_working_set_bytes{namespace=\"online-boutique\",container!=\"\",image!=\"\"}, \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
+          "legendFormat": "{{ workload }}",
           "refId": "A"
         }
       ],
-      "title": "Memory Usage by Pod",
+      "title": "Memory Usage by Service",
       "type": "timeseries"
     },
     {
@@ -547,79 +548,9 @@
       "options": {
         "legend": {
           "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (pod) (rate(container_network_receive_bytes_total{namespace=\"online-boutique\"}[5m]))",
-          "legendFormat": "{{ pod }} receive",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (pod) (rate(container_network_transmit_bytes_total{namespace=\"online-boutique\"}[5m]))",
-          "legendFormat": "{{ pod }} transmit",
-          "refId": "B"
-        }
-      ],
-      "title": "Network I/O by Pod",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "Containers",
-            "drawStyle": "bars",
-            "fillOpacity": 70,
-            "gradientMode": "none",
-            "lineWidth": 1,
-            "showPoints": "never",
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 20
-      },
-      "id": 10,
-      "options": {
-        "legend": {
-          "calcs": [
             "lastNotNull"
           ],
-          "displayMode": "table",
+          "displayMode": "list",
           "placement": "right"
         },
         "tooltip": {
@@ -633,13 +564,84 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pod, reason) (kube_pod_container_status_waiting_reason{namespace=\"online-boutique\"})",
-          "legendFormat": "{{ pod }} {{ reason }}",
+          "expr": "sum by (workload) (label_replace(rate(container_network_receive_bytes_total{namespace=\"online-boutique\"}[5m]), \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
+          "legendFormat": "{{ workload }} receive",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (workload) (label_replace(rate(container_network_transmit_bytes_total{namespace=\"online-boutique\"}[5m]), \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
+          "legendFormat": "{{ workload }} transmit",
+          "refId": "B"
+        }
+      ],
+      "title": "Network I/O by Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(kube_pod_container_status_waiting_reason{namespace=\"online-boutique\"}) or vector(0)",
+          "legendFormat": "Waiting containers",
           "refId": "A"
         }
       ],
-      "title": "Container Waiting Reasons",
-      "type": "timeseries"
+      "title": "Waiting Containers",
+      "type": "stat"
     }
   ],
   "refresh": "30s",
@@ -655,13 +657,13 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "NT114 Online Boutique Application",
   "uid": "nt114-online-boutique-app",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
