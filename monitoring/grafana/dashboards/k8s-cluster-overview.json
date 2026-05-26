@@ -17,9 +17,123 @@
   },
   "editable": true,
   "graphTooltip": 1,
-  "id": null,
-  "links": [],
   "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
+          "legendFormat": "Ready nodes",
+          "refId": "A"
+        }
+      ],
+      "title": "Ready Nodes",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"} == bool 0)",
+          "legendFormat": "Not ready nodes",
+          "refId": "A"
+        }
+      ],
+      "title": "Not Ready Nodes",
+      "type": "stat"
+    },
     {
       "datasource": {
         "type": "prometheus",
@@ -52,12 +166,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
+        "h": 7,
+        "w": 6,
+        "x": 12,
         "y": 0
       },
-      "id": 1,
+      "id": 3,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -72,10 +186,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
           "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
           "legendFormat": "CPU used",
           "refId": "A"
@@ -116,12 +226,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
+        "h": 7,
+        "w": 6,
+        "x": 18,
         "y": 0
       },
-      "id": 2,
+      "id": 4,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -136,10 +246,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
           "expr": "100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))",
           "legendFormat": "Memory used",
           "refId": "A"
@@ -155,258 +261,10 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 0
-      },
-      "id": 3,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
-          "legendFormat": "Ready nodes",
-          "refId": "A"
-        }
-      ],
-      "title": "Ready Nodes",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 0
-      },
-      "id": 4,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"} == bool 0)",
-          "legendFormat": "Not ready nodes",
-          "refId": "A"
-        }
-      ],
-      "title": "Not Ready Nodes",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "Pods",
-            "drawStyle": "bars",
-            "fillOpacity": 70,
-            "gradientMode": "none",
-            "lineWidth": 1,
-            "showPoints": "never",
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "right"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "count by (namespace) (kube_pod_info)",
-          "legendFormat": "{{ namespace }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Pod Count by Namespace",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "Pods",
-            "drawStyle": "bars",
-            "fillOpacity": 70,
-            "gradientMode": "none",
-            "lineWidth": 1,
-            "showPoints": "never",
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "right"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (phase) (kube_pod_status_phase)",
-          "legendFormat": "{{ phase }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Pod Phase Count",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
           "custom": {
             "axisLabel": "CPU %",
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
+            "fillOpacity": 12,
             "lineWidth": 2,
             "showPoints": "never"
           },
@@ -418,29 +276,24 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 7
       },
-      "id": 7,
+      "id": 5,
       "options": {
         "legend": {
           "calcs": [
-            "mean",
+            "lastNotNull",
             "max"
           ],
           "displayMode": "table",
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "multi",
-          "sort": "none"
+          "mode": "multi"
         }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
           "expr": "100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
           "legendFormat": "{{ instance }}",
           "refId": "A"
@@ -456,14 +309,10 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
           "custom": {
             "axisLabel": "Memory %",
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
+            "fillOpacity": 12,
             "lineWidth": 2,
             "showPoints": "never"
           },
@@ -475,29 +324,24 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 7
       },
-      "id": 8,
+      "id": 6,
       "options": {
         "legend": {
           "calcs": [
-            "mean",
+            "lastNotNull",
             "max"
           ],
           "displayMode": "table",
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "multi",
-          "sort": "none"
+          "mode": "multi"
         }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
           "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
           "legendFormat": "{{ instance }}",
           "refId": "A"
@@ -509,7 +353,6 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "style": "dark",
   "tags": [
     "nt114",
     "kubernetes",
@@ -519,13 +362,11 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-30m",
     "to": "now"
   },
-  "timepicker": {},
   "timezone": "browser",
   "title": "NT114 Kubernetes Cluster Overview",
   "uid": "nt114-k8s-cluster-overview",
-  "version": 1,
-  "weekStart": ""
+  "version": 2
 }

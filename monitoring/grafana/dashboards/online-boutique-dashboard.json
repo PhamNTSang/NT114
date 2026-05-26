@@ -17,8 +17,6 @@
   },
   "editable": true,
   "graphTooltip": 1,
-  "id": null,
-  "links": [],
   "panels": [
     {
       "datasource": {
@@ -70,16 +68,12 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
           "expr": "sum(kube_deployment_status_replicas_available{namespace=\"online-boutique\"})",
           "legendFormat": "Available replicas",
           "refId": "A"
         }
       ],
-      "title": "Available App Replicas",
+      "title": "Available Replicas",
       "type": "stat"
     },
     {
@@ -132,16 +126,12 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(kube_pod_status_ready{namespace=\"online-boutique\",condition=\"false\"})",
-          "legendFormat": "Not ready pods",
+          "expr": "sum(kube_deployment_status_replicas_unavailable{namespace=\"online-boutique\"}) or vector(0)",
+          "legendFormat": "Unavailable replicas",
           "refId": "A"
         }
       ],
-      "title": "Not Ready App Pods",
+      "title": "Unavailable Replicas",
       "type": "stat"
     },
     {
@@ -167,7 +157,7 @@
               },
               {
                 "color": "red",
-                "value": 5
+                "value": 3
               }
             ]
           },
@@ -198,16 +188,12 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"online-boutique\"}[15m]))",
+          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"online-boutique\"}[15m])) or vector(0)",
           "legendFormat": "Restarts",
           "refId": "A"
         }
       ],
-      "title": "Restarts in Last 15m",
+      "title": "Restarts in 15 Minutes",
       "type": "stat"
     },
     {
@@ -228,16 +214,12 @@
                 "value": null
               },
               {
-                "color": "yellow",
-                "value": 0.5
-              },
-              {
                 "color": "red",
                 "value": 1
               }
             ]
           },
-          "unit": "cores"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -249,8 +231,8 @@
       },
       "id": 4,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
+        "colorMode": "background",
+        "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
@@ -264,16 +246,12 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"online-boutique\",container!=\"\",image!=\"\"}[5m]))",
-          "legendFormat": "CPU cores",
+          "expr": "sum(kube_pod_container_status_waiting_reason{namespace=\"online-boutique\"}) or vector(0)",
+          "legendFormat": "Waiting containers",
           "refId": "A"
         }
       ],
-      "title": "Total App CPU",
+      "title": "Waiting Containers",
       "type": "stat"
     },
     {
@@ -283,23 +261,19 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
           "custom": {
-            "axisLabel": "Replicas",
+            "axisLabel": "CPU cores",
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
+            "fillOpacity": 12,
             "lineWidth": 2,
             "showPoints": "never"
           },
-          "unit": "short"
+          "unit": "cores"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 4
@@ -311,148 +285,15 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "right"
         },
         "tooltip": {
-          "mode": "multi",
-          "sort": "none"
+          "mode": "multi"
         }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "kube_deployment_spec_replicas{namespace=\"online-boutique\"}",
-          "legendFormat": "{{ deployment }} desired",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "kube_deployment_status_replicas_available{namespace=\"online-boutique\"}",
-          "legendFormat": "{{ deployment }} available",
-          "refId": "B"
-        }
-      ],
-      "title": "Deployment Desired vs Available Replicas",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 4
-      },
-      "id": 6,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (phase) (kube_pod_status_phase{namespace=\"online-boutique\"})",
-          "legendFormat": "{{ phase }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Application Pod Phase Count",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "CPU cores",
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "lineWidth": 2,
-            "showPoints": "never"
-          },
-          "unit": "cores"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 12
-      },
-      "id": 7,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (workload) (label_replace(rate(container_cpu_usage_seconds_total{namespace=\"online-boutique\",container!=\"\",image!=\"\"}[5m]), \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
+          "expr": "sum by (workload) (label_replace(rate(container_cpu_usage_seconds_total{namespace=\"online-boutique\",container!=\"\",container!=\"POD\",image!=\"\"}[5m]), \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
           "legendFormat": "{{ workload }}",
           "refId": "A"
         }
@@ -467,14 +308,10 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
           "custom": {
             "axisLabel": "Memory",
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
+            "fillOpacity": 12,
             "lineWidth": 2,
             "showPoints": "never"
           },
@@ -483,174 +320,40 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
-        "y": 12
+        "y": 4
       },
-      "id": 8,
+      "id": 6,
       "options": {
         "legend": {
           "calcs": [
             "lastNotNull"
           ],
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "right"
         },
         "tooltip": {
-          "mode": "multi",
-          "sort": "none"
+          "mode": "multi"
         }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (workload) (label_replace(container_memory_working_set_bytes{namespace=\"online-boutique\",container!=\"\",image!=\"\"}, \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
+          "expr": "sum by (workload) (label_replace(container_memory_working_set_bytes{namespace=\"online-boutique\",container!=\"\",container!=\"POD\",image!=\"\"}, \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
           "legendFormat": "{{ workload }}",
           "refId": "A"
         }
       ],
       "title": "Memory Usage by Service",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "Bytes/sec",
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "lineWidth": 2,
-            "showPoints": "never"
-          },
-          "unit": "Bps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 20
-      },
-      "id": 9,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "list",
-          "placement": "right"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (workload) (label_replace(rate(container_network_receive_bytes_total{namespace=\"online-boutique\"}[5m]), \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
-          "legendFormat": "{{ workload }} receive",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (workload) (label_replace(rate(container_network_transmit_bytes_total{namespace=\"online-boutique\"}[5m]), \"workload\", \"$1\", \"pod\", \"(.+)-[a-f0-9]{8,10}-[a-z0-9]{5}$\"))",
-          "legendFormat": "{{ workload }} transmit",
-          "refId": "B"
-        }
-      ],
-      "title": "Network I/O by Service",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 20
-      },
-      "id": 10,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(kube_pod_container_status_waiting_reason{namespace=\"online-boutique\"}) or vector(0)",
-          "legendFormat": "Waiting containers",
-          "refId": "A"
-        }
-      ],
-      "title": "Waiting Containers",
-      "type": "stat"
     }
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "style": "dark",
   "tags": [
     "nt114",
     "online-boutique",
-    "kubernetes",
     "prometheus"
   ],
   "templating": {
@@ -660,10 +363,8 @@
     "from": "now-30m",
     "to": "now"
   },
-  "timepicker": {},
   "timezone": "browser",
   "title": "NT114 Online Boutique Application",
   "uid": "nt114-online-boutique-app",
-  "version": 2,
-  "weekStart": ""
+  "version": 3
 }
