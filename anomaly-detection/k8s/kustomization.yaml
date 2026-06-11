@@ -1,0 +1,13 @@
+# Kustomization file de quan ly cac resource Kubernetes cho ung dung phat hien bat thuong,
+# Bao gom CronJob de thuc thi theo lich trinh, 
+# ConfigMap de luu tru tham so cau hinh 
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: anomaly-detection
+resources:
+  - configmap.yaml
+  - cronjob.yaml
+images:
+  - name: anomaly-detection
+    newName: anomaly-detection
+    newTag: latest

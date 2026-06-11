@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: anomaly-detection
+  namespace: anomaly-detection
+  labels:
+    app: anomaly-detection
+spec:
+  schedule: "*/15 * * * *"  
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: anomaly-detection
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: anomaly-detection
+              image: anomaly-detection:latest
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: anomaly-detection-config
+                - secretRef:
+                    name: anomaly-detection-secrets
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi

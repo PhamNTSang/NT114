@@ -1,0 +1,20 @@
+# Cau hinh ConfigMap de luu tru cac tham so cau hinh cho ung dung phat hien bat thuong,
+# Bao gom URL cua Prometheus, khoang thoi gian lookback, 
+# truy van va he so contamination de dieu chinh do nhay cam cua bo phan phat hien bat thuong
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: anomaly-detection-config
+  namespace: anomaly-detection
+  labels:
+    app: anomaly-detection
+data:
+  PROMETHEUS_URL: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+  APP_NAMESPACE: "online-boutique"
+  LOOKBACK_HOURS: "24"
+  QUERY_STEP: "5m"
+  CONTAMINATION_FACTOR: "0.05"
+  MIN_DATA_POINTS: "10"
+  STD_DEVIATION_MULTIPLIER: "2.0"
+  PROMETHEUS_TIMEOUT: "30"
+

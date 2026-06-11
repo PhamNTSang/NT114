@@ -1,4 +1,13 @@
 
+defaultRules:
+  rules:
+    etcd: false
+    kubeControllerManager: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+  disabled:
+    Watchdog: true
+
 prometheus:
   prometheusSpec:
     retention: 15d
@@ -17,7 +26,7 @@ grafana:
   enabled: true
   defaultDashboardsEnabled: false
   adminUser: admin
-  adminPassword: admin
+  adminPassword: changeme-grafana-password
   persistence:
     enabled: false
   sidecar:
@@ -58,3 +67,12 @@ kubeStateMetrics:
 
 nodeExporter:
   enabled: true
+
+kubeEtcd:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false

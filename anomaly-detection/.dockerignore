@@ -1,0 +1,11 @@
+**/.git
+**/.github
+**/.terraform
+**/__pycache__
+**/*.pyc
+.env
+.venv
+venv
+*.log
+.env.*
+!.env.local.example
