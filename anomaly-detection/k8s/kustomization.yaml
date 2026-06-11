@@ -5,9 +5,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: anomaly-detection
 resources:
-  - configmap.yaml
-  - cronjob.yaml
+- configmap.yaml
+- cronjob.yaml
 images:
-  - name: anomaly-detection
-    newName: anomaly-detection
-    newTag: latest
+- name: anomaly-detection
+  newName: hoangphuc858903/anomaly-detection
+  newTag: 6ae8c3d
