@@ -5,7 +5,7 @@ services:
       - "8089:8089"
     volumes:
       - ./locustfile.py:/mnt/locust/locustfile.py
-    command: -f /mnt/locust/locustfile.py --master -H host.docker.internal:8080
+    command: -f /mnt/locust/locustfile.py --master -H host.docker.internal:8082
     networks:
       - locust
 
