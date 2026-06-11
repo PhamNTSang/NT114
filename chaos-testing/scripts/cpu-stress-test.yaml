@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cpu-stress-test
+  namespace: online-boutique
+  labels:
+    app: stress-test
+    type: cpu
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app: stress-test
+        type: cpu
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: stress
+          image: progrium/stress
+          command: ["stress"]
+          args:
+            - "--cpu"
+            - "4"
+            - "--timeout"
+            - "300s"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "128Mi"
+            limits:
+              cpu: "2"
+              memory: "256Mi"
