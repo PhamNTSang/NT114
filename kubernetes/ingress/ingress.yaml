@@ -22,7 +22,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana-ingress
-  namespace: monitoring # Khối này sẽ chạy ở namespace monitoring
+  namespace: monitoring 
 spec:
   ingressClassName: nginx
   rules:
