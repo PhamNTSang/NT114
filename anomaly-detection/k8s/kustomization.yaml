@@ -10,4 +10,4 @@ resources:
 images:
 - name: anomaly-detection
   newName: hoangphuc858903/anomaly-detection
-  newTag: 6ae8c3d
+  newTag: f499be0
