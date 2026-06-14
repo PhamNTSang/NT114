@@ -76,3 +76,11 @@ kubeControllerManager:
 
 kubeScheduler:
   enabled: false
+  
+prometheus-node-exporter:
+  livenessProbe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 5
+  readinessProbe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 5

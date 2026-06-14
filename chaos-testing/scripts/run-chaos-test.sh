@@ -14,6 +14,12 @@ NC='\033[0m'
 
 NAMESPACE=${1:-online-boutique}
 
+echo -e "${YELLOW}Phase 0: Pre-cleanup (Dọn dẹp tài nguyên cũ)${NC}"
+echo "Đang xóa các Job cũ nếu có..."
+kubectl delete job cpu-stress-test -n ${NAMESPACE} --ignore-not-found
+kubectl delete job memory-stress-test -n ${NAMESPACE} --ignore-not-found
+sleep 2
+
 echo -e "${YELLOW}Phase 1: Baseline Monitoring (2 minutes)${NC}"
 echo "Recording baseline metrics before stress test..."
 echo "Check Grafana dashboard at: http://grafana.example.com"

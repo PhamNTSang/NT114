@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/hoangphuc6716/NT114-DACN.git
+    repoURL: https://github.com/PhamNTSang/NT114.git
     path: anomaly-detection/k8s
     targetRevision: main
   destination:

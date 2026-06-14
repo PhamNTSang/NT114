@@ -10,7 +10,6 @@ from .config import CONTAMINATION_FACTOR, MIN_DATA_POINTS, STD_DEVIATION_MULTIPL
 
 logger = logging.getLogger(__name__)
 
-# Dinh nghia cau truc ket qua phat hien bat thuong
 @dataclass
 class AnomalyResult:
     metric_name: str
@@ -24,18 +23,16 @@ class AnomalyResult:
     threshold_lower: float
     description: str
 
-# Ham phat hien bat thuong su dung Isolation Forest va phan tich thong ke
 def detect_anomalies(
     df: pd.DataFrame,
     metric_name: str,
     contamination: float = CONTAMINATION_FACTOR,
 ) -> List[AnomalyResult]:
     results = []
-# Neu khong co du lieu de phan tich, tra ve ket qua rong va ghi log
     if df is None or df.empty:
         logger.warning("No data to analyze for metric: %s", metric_name)
         return results
-# Phan tich moi nhom label rieng biet de phat hien bat thuong
+
     for label_group, group_df in df.groupby("labels"):
         result = _analyze_group(
             group_df=group_df,
@@ -43,7 +40,6 @@ def detect_anomalies(
             labels=str(label_group),
             contamination=contamination,
         ) 
-    # Neu ket qua phat hien bat thuong, them vao danh sach ket qua va ghi log
         if result and result.is_anomaly:
             results.append(result)
 
@@ -55,7 +51,6 @@ def detect_anomalies(
     )
     return results
 
-# Ham phan tich moi nhom label de phat hien bat thuong su dung Isolation Forest va phan tich thong ke
 def _analyze_group(
     group_df: pd.DataFrame,
     metric_name: str,
@@ -63,11 +58,11 @@ def _analyze_group(
     contamination: float,
 ) -> Optional[AnomalyResult]:
     values = group_df["value"].values
-# Neu so luong du lieu nho hon nguong, tra ve None va ghi log
+
     if len(values) < MIN_DATA_POINTS:
         logger.debug("Not enough data points for %s (%s): %d", metric_name, labels, len(values))
         return None
-# Phan tich du lieu su dung Isolation Forest va phan tich thong ke, tra ve ket qua phat hien bat thuong va ghi log
+
     try:
         X = values.reshape(-1, 1)
 
@@ -85,14 +80,24 @@ def _analyze_group(
         mean_val = float(np.mean(values))
         std_val = float(np.std(values))
 
-        scores = model.decision_function(X)
         threshold_upper = float(mean_val + STD_DEVIATION_MULTIPLIER * std_val)
         threshold_lower = float(mean_val - STD_DEVIATION_MULTIPLIER * std_val)
 
-        is_anomaly = latest_prediction == -1
+
+        is_ml_anomaly = latest_prediction == -1
+
+     
+        is_stat_anomaly = (latest_value > threshold_upper) or (latest_value < threshold_lower)
+
+      
+        min_change_required = max(abs(mean_val * 0.01), 1e-6)
+        is_significant_change = abs(latest_value - mean_val) > min_change_required
+
+    
+        is_anomaly = is_ml_anomaly and is_stat_anomaly and is_significant_change
 
         description = (
-            f"{' ANOMALY DETECTED' if is_anomaly else 'Normal'}: "
+            f"{'ANOMALY DETECTED' if is_anomaly else 'Normal'}: "
             f"{metric_name} for {labels}. "
             f"Current: {latest_value:.4f}, "
             f"Mean: {mean_val:.4f}, Std: {std_val:.4f}, "
