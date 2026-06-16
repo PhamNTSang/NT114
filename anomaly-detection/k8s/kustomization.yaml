@@ -10,5 +10,4 @@ resources:
 images:
 - name: anomaly-detection
   newName: hoangphuc858903/anomaly-detection
-  newTag: v2
-
+  newTag: edbef72
