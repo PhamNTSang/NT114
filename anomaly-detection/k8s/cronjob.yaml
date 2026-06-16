@@ -6,7 +6,7 @@ metadata:
   labels:
     app: anomaly-detection
 spec:
-  schedule: "*/15 * * * *"  
+  schedule: "* * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -21,8 +21,8 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: anomaly-detection
-              image: anomaly-detection:latest
-              imagePullPolicy: IfNotPresent
+              image: hoangphuc858903/anomaly-detection:v10
+              imagePullPolicy: Always                      
               envFrom:
                 - configMapRef:
                     name: anomaly-detection-config

@@ -7,7 +7,7 @@ metadata:
     app: stress-test
     type: memory
 spec:
-  ttlSecondsAfterFinished: 300
+  ttlSecondsAfterFinished: 900
   template:
     metadata:
       labels:
@@ -23,13 +23,13 @@ spec:
             - "--vm"
             - "2"
             - "--vm-bytes"
-            - "512M"
+            - "1G"
             - "--timeout"
-            - "300s"
+            - "900s"
           resources:
             requests:
               cpu: "100m"
               memory: "256Mi"
             limits:
               cpu: "500m"
-              memory: "1Gi"
+              memory: "3Gi"

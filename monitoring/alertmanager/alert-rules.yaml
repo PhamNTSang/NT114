@@ -20,7 +20,7 @@ spec:
 
         - alert: HighNodeCPU
           expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
-          for: 5m
+          for: 2m
           labels:
             severity: warning
           annotations:
@@ -29,7 +29,7 @@ spec:
 
         - alert: HighNodeMemory
           expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
-          for: 5m
+          for: 2m
           labels:
             severity: warning
           annotations:
@@ -38,7 +38,7 @@ spec:
 
         - alert: NodeDiskSpaceLow
           expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 90
-          for: 10m
+          for: 5m
           labels:
             severity: critical
           annotations:
@@ -49,7 +49,7 @@ spec:
       rules:
         - alert: PodCrashLoopBackOff
           expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 * 5 > 0
-          for: 5m
+          for: 2m
           labels:
             severity: critical
           annotations:
@@ -58,7 +58,7 @@ spec:
 
         - alert: PodNotReady
           expr: kube_pod_status_ready{condition="true"} == 0
-          for: 10m
+          for: 2m
           labels:
             severity: warning
           annotations:
@@ -67,7 +67,7 @@ spec:
 
         - alert: HighPodCPU
           expr: sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) by (namespace, pod) > 0.8
-          for: 5m
+          for: 2m
           labels:
             severity: warning
           annotations:
@@ -76,7 +76,7 @@ spec:
 
         - alert: HighPodMemory
           expr: sum(container_memory_working_set_bytes{container!=""}) by (namespace, pod) / sum(container_spec_memory_limit_bytes{container!=""}) by (namespace, pod) * 100 > 85
-          for: 5m
+          for: 2m
           labels:
             severity: warning
           annotations:
@@ -87,7 +87,7 @@ spec:
       rules:
         - alert: DeploymentReplicasMismatch
           expr: kube_deployment_spec_replicas != kube_deployment_status_ready_replicas
-          for: 10m
+          for: 5m
           labels:
             severity: warning
           annotations:
