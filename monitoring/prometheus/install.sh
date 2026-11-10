@@ -10,6 +10,11 @@ if [ -f "${SCRIPT_DIR}/alertmanager-slack.local.yaml" ]; then
   EXTRA_VALUES+=("-f" "${SCRIPT_DIR}/alertmanager-slack.local.yaml")
 fi
 
+if [ -n "${PROM_EXTRA_VALUES:-}" ]; then
+  echo "Using extra values: ${PROM_EXTRA_VALUES}"
+  EXTRA_VALUES+=("-f" "${PROM_EXTRA_VALUES}")
+fi
+
 echo "Installing Prometheus Stack"
 
 # Add Helm repo
