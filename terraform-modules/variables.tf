@@ -3,7 +3,7 @@
 variable "aws_region" {
   description = "AWS region su dung de trien khai resources"
   type        = string
-  default     = "ap-southeast-1"
+  default     = "ap-southeast-2"
 }
 
 variable "project_name" {
@@ -34,7 +34,7 @@ variable "vpc_cidr" {
 variable "availability_zones" {
   description = "Danh sach Availability Zones su dung"
   type        = list(string)
-  default     = ["ap-southeast-1a", "ap-southeast-1b"]
+  default     = ["ap-southeast-2a", "ap-southeast-2b"]
 }
 
 variable "private_subnet_cidrs" {
@@ -54,7 +54,7 @@ variable "public_subnet_cidrs" {
 variable "eks_cluster_version" {
   description = "Phien ban Kubernetes cho EKS cluster"
   type        = string
-  default     = "1.31"
+  default     = "1.37"
 }
 
 variable "eks_node_instance_type" {
