@@ -1,0 +1,20 @@
+prometheus:
+  prometheusSpec:
+    retention: 3d
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: "1", memory: 1Gi }
+alertmanager:
+  enabled: false
+grafana:
+  resources:
+    requests: { cpu: 50m, memory: 96Mi }
+    limits: { memory: 256Mi }
+prometheusOperator:
+  resources:
+    requests: { cpu: 50m, memory: 48Mi }
+    limits: { memory: 128Mi }
+kube-state-metrics:
+  resources:
+    requests: { cpu: 20m, memory: 48Mi }
+    limits: { memory: 128Mi }
