@@ -8,3 +8,11 @@
 secrets.yaml
 monitoring/prometheus/*.local.yaml
 monitoring/alertmanager/*.local.yaml
+
+
+self-healing/data/
+self-healing/results/
+self-healing/models/*.zip
+!self-healing/models/current.zip
+self-healing/logs/
+.env
