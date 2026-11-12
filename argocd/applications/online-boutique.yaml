@@ -12,9 +12,17 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: online-boutique
+  # ArgoCD khong duoc theo doi va bo qua su thay đoi o 2 trường du lieu cua cac Deployment
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jqPathExpressions:
+        - .spec.replicas
+        - .spec.template.spec.containers[].resources
   syncPolicy:
     automated:
       prune: true
-      selfHeal: true
+      selfHeal: false  
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
