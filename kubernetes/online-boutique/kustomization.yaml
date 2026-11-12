@@ -34,3 +34,11 @@ images:
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/shippingservice
   newName: hoangphuc858903/shippingservice
   newTag: edbef72
+patches:
+  - target:
+      kind: Deployment
+      name: loadgenerator
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
