@@ -34,12 +34,12 @@ kubectl apply -f "$ROOT/kubernetes/ingress/ingress.yaml"
 kubectl -n online-boutique wait --for=condition=available deploy --all --timeout=600s
 
 echo "=== 7. Chaos Mesh  ==="
-helm upgrade --install chaos-mesh chaos-mesh/chaos-mesh -n chaos-mesh --create-namespace \
+MSYS_NO_PATHCONV=1 helm upgrade --install chaos-mesh chaos-mesh/chaos-mesh -n chaos-mesh --create-namespace \
   --set chaosDaemon.runtime=containerd \
   --set chaosDaemon.socketPath=/run/containerd/containerd.sock \
   --set controllerManager.replicaCount=1 \
   --set dashboard.create=false \
-  --version 2.7.2 --wait   
+    --version 2.7.2 --wait --timeout 20m
 
 echo "=== 8. Recording rules + Locust  ==="
 kubectl apply -f "$ROOT/monitoring/prometheus/selfheal-rules.yaml"
