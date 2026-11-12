@@ -8,8 +8,8 @@ alertmanager:
   enabled: false
 grafana:
   resources:
-    requests: { cpu: 50m, memory: 96Mi }
-    limits: { memory: 256Mi }
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }
 prometheusOperator:
   resources:
     requests: { cpu: 50m, memory: 48Mi }
