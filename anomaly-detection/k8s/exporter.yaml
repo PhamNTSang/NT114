@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anomaly-exporter
+  namespace: anomaly-detection
+  labels: { app: anomaly-exporter }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: anomaly-exporter } }
+  template:
+    metadata: { labels: { app: anomaly-exporter } }
+    spec:
+      containers:
+        - name: exporter
+          image: anomaly-detection          
+          command: ["python", "-m", "src.exporter"]
+          ports: [{ containerPort: 8000, name: metrics }]
+          envFrom:
+            - configMapRef: { name: anomaly-detection-config }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: anomaly-exporter
+  namespace: anomaly-detection
+  labels: { app: anomaly-exporter }
+spec:
+  selector: { app: anomaly-exporter }
+  ports: [{ name: metrics, port: 8000, targetPort: 8000 }]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: anomaly-exporter
+  namespace: anomaly-detection
+  labels: { release: prometheus }
+spec:
+  selector: { matchLabels: { app: anomaly-exporter } }
+  endpoints: [{ port: metrics, interval: 15s }]
