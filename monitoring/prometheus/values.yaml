@@ -10,6 +10,8 @@ defaultRules:
 
 prometheus:
   prometheusSpec:
+    scrapeInterval: 15s
+    evaluationInterval: 15s
     retention: 15d
     resources:
       requests:
