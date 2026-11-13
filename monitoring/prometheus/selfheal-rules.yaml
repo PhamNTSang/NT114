@@ -14,7 +14,7 @@ spec:
           expr: sum(rate(nginx_ingress_controller_requests{ingress="online-boutique-ingress"}[1m]))
         - record: selfheal:ingress_error_rate:1m
           expr: |
-            sum(rate(nginx_ingress_controller_requests{ingress="online-boutique-ingress",status=~"5.."}[1m]))
+            (sum(rate(nginx_ingress_controller_requests{ingress="online-boutique-ingress",status=~"5.."}[1m])) or vector(0))
             / clamp_min(sum(rate(nginx_ingress_controller_requests{ingress="online-boutique-ingress"}[1m])), 0.001)
         - record: selfheal:ingress_latency_p99_ms:1m
           expr: |
