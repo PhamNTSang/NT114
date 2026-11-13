@@ -7,6 +7,7 @@ namespace: anomaly-detection
 resources:
 - configmap.yaml
 - cronjob.yaml
+- exporter.yaml
 images:
 - name: anomaly-detection
   newName: hoangphuc858903/anomaly-detection
