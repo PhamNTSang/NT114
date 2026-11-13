@@ -103,7 +103,7 @@ metadata:
   namespace: selfheal
 data:
   AGENT_ENABLED: "true"        
-  SLO_P99_MS: "200"           
+  SLO_P99_MS: "305"           
   SLO_ERR: "0.01"
   REQUIRE_APPROVAL: ""         
   LLM_BACKEND: "groq"         
