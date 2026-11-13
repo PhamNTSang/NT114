@@ -1,0 +1,57 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: selfheal-rules
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: selfheal.ingress
+      interval: 15s
+      rules:
+        - record: selfheal:ingress_rps:1m
+          expr: sum(rate(nginx_ingress_controller_requests{ingress="online-boutique-ingress"}[1m]))
+        - record: selfheal:ingress_error_rate:1m
+          expr: |
+            sum(rate(nginx_ingress_controller_requests{ingress="online-boutique-ingress",status=~"5.."}[1m]))
+            / clamp_min(sum(rate(nginx_ingress_controller_requests{ingress="online-boutique-ingress"}[1m])), 0.001)
+        - record: selfheal:ingress_latency_p99_ms:1m
+          expr: |
+            1000 * histogram_quantile(0.99, sum by (le) (
+              rate(nginx_ingress_controller_request_duration_seconds_bucket{ingress="online-boutique-ingress"}[1m])))
+        - record: selfheal:ingress_latency_p95_ms:1m
+          expr: |
+            1000 * histogram_quantile(0.95, sum by (le) (
+              rate(nginx_ingress_controller_request_duration_seconds_bucket{ingress="online-boutique-ingress"}[1m])))
+    - name: selfheal.deployment
+      interval: 15s
+      rules:
+        
+        - record: selfheal:deployment_cpu_cores:1m
+          expr: |
+            sum by (deployment) (label_replace(
+              rate(container_cpu_usage_seconds_total{namespace="online-boutique",container!="",container!="POD",image!=""}[1m]),
+              "deployment", "$1", "pod", "^(.*)-[a-z0-9]+-[a-z0-9]+$"))
+        - record: selfheal:deployment_cpu_limit_cores
+          expr: |
+            sum by (deployment) (label_replace(
+              kube_pod_container_resource_limits{namespace="online-boutique",resource="cpu"},
+              "deployment", "$1", "pod", "^(.*)-[a-z0-9]+-[a-z0-9]+$"))
+        - record: selfheal:deployment_cpu_ratio:1m
+          expr: selfheal:deployment_cpu_cores:1m / selfheal:deployment_cpu_limit_cores
+        - record: selfheal:deployment_mem_ratio
+          expr: |
+            sum by (deployment) (label_replace(
+              container_memory_working_set_bytes{namespace="online-boutique",container!="",container!="POD",image!=""},
+              "deployment", "$1", "pod", "^(.*)-[a-z0-9]+-[a-z0-9]+$"))
+            / sum by (deployment) (label_replace(
+              kube_pod_container_resource_limits{namespace="online-boutique",resource="memory"},
+              "deployment", "$1", "pod", "^(.*)-[a-z0-9]+-[a-z0-9]+$"))
+        - record: selfheal:deployment_restarts:5m
+          expr: |
+            sum by (deployment) (label_replace(
+              increase(kube_pod_container_status_restarts_total{namespace="online-boutique"}[5m]),
+              "deployment", "$1", "pod", "^(.*)-[a-z0-9]+-[a-z0-9]+$"))
+        - record: selfheal:ob_cpu_ratio:1m
+          expr: sum(selfheal:deployment_cpu_cores:1m) / sum(selfheal:deployment_cpu_limit_cores)
