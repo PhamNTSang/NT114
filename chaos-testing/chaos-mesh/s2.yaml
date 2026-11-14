@@ -1,0 +1,19 @@
+# Kich ban 2: Ep pod cua dich vu currencyservice vao trang thai CrashLoopBackOff 
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Schedule
+metadata:
+  name: s2-container-kill
+  namespace: online-boutique
+  labels: { selfheal/managed: "true" }
+spec:
+  schedule: "@every 30s"
+  historyLimit: 2
+  concurrencyPolicy: Forbid
+  type: PodChaos
+  podChaos:
+    action: container-kill
+    mode: one
+    containerNames: ["server"]
+    selector:
+      namespaces: [online-boutique]
+      labelSelectors: { app: currencyservice }
