@@ -1,0 +1,15 @@
+# Kich ban 3: Tao stress CPU tren tat ca cac pod cua dich vu frontend trong 3 phut
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: s3-cpu-stress
+  namespace: online-boutique
+  labels: { selfheal/managed: "true" }
+spec:
+  mode: all
+  duration: "180s"
+  selector:
+    namespaces: [online-boutique]
+    labelSelectors: { app: frontend }
+  stressors:
+    cpu: { workers: 2, load: 90 }
