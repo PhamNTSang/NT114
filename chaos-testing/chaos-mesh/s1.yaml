@@ -1,0 +1,14 @@
+# Kich ban 1: Danh sap 1 pod cua dich vu cartservice trong 3 phut
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: s1-pod-failure
+  namespace: online-boutique
+  labels: { selfheal/managed: "true" }
+spec:
+  action: pod-failure
+  mode: one
+  duration: "180s"
+  selector:
+    namespaces: [online-boutique]
+    labelSelectors: { app: cartservice }
