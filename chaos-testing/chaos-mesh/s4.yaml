@@ -1,0 +1,15 @@
+# Kich ban 4: Tao memory stress tren 1 pod cua dich vu recommendationservice 
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: s4-memory-stress
+  namespace: online-boutique
+  labels: { selfheal/managed: "true" }
+spec:
+  mode: one
+  duration: "180s"
+  selector:
+    namespaces: [online-boutique]
+    labelSelectors: { app: recommendationservice }
+  stressors:
+    memory: { workers: 1, size: "512MB" }
