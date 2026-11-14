@@ -1,0 +1,15 @@
+# Kich ban 5: Tao delay mang tren 1 pod cua dich vu productcatalogservice trong 3 phut
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: s5-network-delay
+  namespace: online-boutique
+  labels: { selfheal/managed: "true" }
+spec:
+  action: delay
+  mode: one
+  duration: "180s"
+  selector:
+    namespaces: [online-boutique]
+    labelSelectors: { app: productcatalogservice }
+  delay: { latency: "300ms", jitter: "50ms", correlation: "25" }
