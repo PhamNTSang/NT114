@@ -1,0 +1,19 @@
+# Cai torch ban CPU truoc: pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+gymnasium==1.0.0
+stable-baselines3==2.4.1
+sb3-contrib==2.4.0
+numpy==1.26.4
+pandas==2.2.3
+scipy==1.14.1
+scikit-learn==1.5.2
+matplotlib==3.9.2
+kubernetes==31.0.0
+requests==2.32.3
+prometheus-client==0.21.0
+groq
+ollama==0.4.4
+jinja2==3.1.4
+tensorboard==2.18.0
+pytest==8.3.3
+tqdm
+rich

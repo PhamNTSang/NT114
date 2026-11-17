@@ -16,3 +16,5 @@ self-healing/models/*.zip
 !self-healing/models/current.zip
 self-healing/logs/
 .env
+self-healing/.venv/
+self-healing/.pf.pids
