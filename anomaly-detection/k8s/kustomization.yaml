@@ -11,4 +11,4 @@ resources:
 images:
 - name: anomaly-detection
   newName: hoangphuc858903/anomaly-detection
-  newTag: edbef72
+  newTag: kltn1
