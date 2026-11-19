@@ -12,17 +12,21 @@ def main(reps: int, epsilon: float, scenarios: list[int]) -> None:
     env = build_live_env(llm=True, scenarios=scenarios)
     rule, rand = RuleBasedPolicy(), RandomSafePolicy(seed=0)
     rng = np.random.default_rng(0)
-    for rep in range(reps):
-        for scenario in scenarios:
-            obs, info = env.reset(options={"scenario": scenario})
-            done = False
-            while not done:
-                mask = env.action_masks()
-                policy = rand if rng.random() < epsilon else rule
-                action = policy.act(obs, env.last_raw, env.last_view, mask)
-                obs, _, term, trunc, info = env.step(action)
-                done = term or trunc
-            print(json.dumps(info["episode_metrics"]), flush=True)
+    try:
+        for rep in range(reps):
+            for scenario in scenarios:
+                obs, info = env.reset(options={"scenario": scenario})
+                done = False
+                while not done:
+                    mask = env.action_masks()
+                    policy = rand if rng.random() < epsilon else rule
+                    action = policy.act(obs, env.last_raw, env.last_view, mask)
+                    obs, _, term, trunc, info = env.step(action)
+                    done = term or trunc
+                print(json.dumps(info["episode_metrics"]), flush=True)
+    finally:   
+        env.injector.cleanup_all()
+        env.executor.restore_baseline()
 
 
 if __name__ == "__main__":
