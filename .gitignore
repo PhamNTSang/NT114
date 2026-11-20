@@ -21,3 +21,4 @@ self-healing/.pf.pids
 
 __pycache__/
 *.pyc
+~$*.xlsx
