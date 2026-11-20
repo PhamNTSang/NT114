@@ -6,39 +6,39 @@ resources:
 images:
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/adservice
   newName: hoangphuc858903/adservice
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/cartservice
   newName: hoangphuc858903/cartservice
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/checkoutservice
   newName: hoangphuc858903/checkoutservice
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/currencyservice
   newName: hoangphuc858903/currencyservice
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/emailservice
   newName: hoangphuc858903/emailservice
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/frontend
   newName: hoangphuc858903/frontend
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/paymentservice
   newName: hoangphuc858903/paymentservice
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/productcatalogservice
   newName: hoangphuc858903/productcatalogservice
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/recommendationservice
   newName: hoangphuc858903/recommendationservice
-  newTag: edbef72
+  newTag: bb9fd41
 - name: us-central1-docker.pkg.dev/google-samples/microservices-demo/shippingservice
   newName: hoangphuc858903/shippingservice
-  newTag: edbef72
+  newTag: bb9fd41
 patches:
-  - target:
-      kind: Deployment
-      name: loadgenerator
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 0
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 0
+  target:
+    kind: Deployment
+    name: loadgenerator
