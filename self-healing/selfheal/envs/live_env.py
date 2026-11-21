@@ -89,15 +89,19 @@ class LiveK8sEnv(gym.Env):
             log.warning("Cluster chua on dinh sau %ss - van tiep tuc", timeout)
 
     def _record_baseline(self, steps: int) -> None:
+        rows = []
         for i in range(steps):
             m = self.builder.metrics(self.target)
             v = self.k8s.view(self.target)
+            rows.append(m)
             self.recorder.write({**m, "episode_id": self.episode_id, "phase": "baseline",
                                  "scenario": self.scenario, "target": self.target, "step": i,
                                  "ts": time.time(), "replicas": v.replicas,
                                  "ready_ratio": v.ready / max(v.replicas, 1),
                                  "bad_pod_ratio": v.bad_pods / max(v.replicas, 1)})
             time.sleep(self.s.step_sec)
+        keys = ["rps", "lat_p99", "err_rate", "tgt_cpu", "tgt_mem"]
+        self.baseline_metrics = {k: round(float(np.median([r.get(k, 0.0) for r in rows])), 4) for k in keys}
 
     def _wait_detection(self, timeout: float) -> float:
         deadline = time.time() + timeout
@@ -116,7 +120,8 @@ class LiveK8sEnv(gym.Env):
         if not self.rca_client:
             return RCAResult.unknown("llm-off"), 0.0
         started = time.time()
-        ctx = collect_context(self.k8s, self.target, self.builder.metrics(self.target))
+        ctx = collect_context(self.k8s, self.target, self.builder.metrics(self.target),
+                              baseline=getattr(self, "baseline_metrics", None))
         ctx["_episode_id"] = self.episode_id      
         return self.rca_client.analyze(ctx), time.time() - started
 
