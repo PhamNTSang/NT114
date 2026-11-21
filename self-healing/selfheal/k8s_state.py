@@ -15,7 +15,8 @@ class K8sState:
         load_kube_config()
         self.core, self.apps, self.s = client.CoreV1Api(), client.AppsV1Api(), settings
         self._free_cache = (0.0, 0.0)
-        self.stable_sig: dict[str, str] = {}  
+        self.stable_sig: dict[str, str] = {}
+        self.changed_at: dict[str, tuple[str, datetime]] = {}  
         self.adjusts: dict[str, int] = {}
 
     @staticmethod
@@ -58,6 +59,20 @@ class K8sState:
 
     def mark_stable(self, dep: str) -> None:
         self.stable_sig[dep] = self.signature(self.deployment(dep).spec.template)
+        self.changed_at.pop(dep, None)
+
+    def rollout_recent(self, dep: str, sig: str, stable: str, now: datetime, window_s: float = 1800) -> bool:
+        """True neu template (image/env) khac ban on dinh va thay doi do xay ra trong window_s giay.
+        Tinh theo luc agent THAY signature doi, khong theo creationTimestamp cua ReplicaSet:
+        trien khai lai mot ban cu thi Kubernetes dung lai ReplicaSet cu (timestamp cu)."""
+        if sig == stable:
+            self.changed_at.pop(dep, None)
+            return False
+        seen_sig, since = self.changed_at.get(dep, (None, None))
+        if seen_sig != sig:
+            since = now
+            self.changed_at[dep] = (sig, since)
+        return (now - since).total_seconds() < window_s
 
     def cluster_free_cpu(self, ttl: float = 60.0) -> float:
         ts, value = self._free_cache
@@ -79,8 +94,7 @@ class K8sState:
         rss = self.replicasets(d)
         sig = self.signature(d.spec.template)
         stable = self.stable_sig.setdefault(dep, sig)
-        newest = rss[-1].metadata.creation_timestamp if rss else None
-        recent = sig != stable and newest is not None and (now - newest).total_seconds() < 1800
+        recent = self.rollout_recent(dep, sig, stable, now)
         requests_ = d.spec.template.spec.containers[0].resources.requests or {}
         return TargetView(
             deployment=dep, replicas=d.spec.replicas or 0,
