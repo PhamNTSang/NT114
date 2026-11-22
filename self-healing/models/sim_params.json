@@ -19,45 +19,55 @@
   "net_delay_ms": 3532.746412645754,
   "bad_deploy_ms": 9975.109117546646,
   "bad_deploy_err": 0.05,
-  "cpu_stress_factor": 0.35,
-  "mem_leak_per_step": 0.017157118055555497,
+  "cpu_stress_factor": 0.07412603767119963,
+  "mem_leak_per_step": 0.45700658162434893,
   "spike_mult": 4.0,
   "cluster_free_cores": 1.5,
-  "llm_accuracy": 0.9091,
+  "llm_accuracy": 0.9090909090909091,
   "obs_noise": 0.03,
   "forecast_noise": 0.1,
   "profiles": {
     "cartservice": {
       "cost_cores_per_rps": 0.0007366523676936086,
       "cpu_limit_cores": 0.3,
-      "mem_base_ratio": 0.44012451171875
+      "mem_base_ratio": 0.44012451171875,
+      "cpu_stress_factor": 0.04666668501854299,
+      "mem_leak_per_step": 0.279937744140625
     },
     "currencyservice": {
       "cost_cores_per_rps": 0.0026621671227754825,
       "cpu_limit_cores": 0.2,
-      "mem_base_ratio": 0.24322509765625
+      "mem_base_ratio": 0.24322509765625,
+      "cpu_stress_factor": 0.25136158124951685,
+      "mem_leak_per_step": 0.378387451171875
     },
     "frontend": {
       "cost_cores_per_rps": 0.0027113723510784147,
       "cpu_limit_cores": 0.2,
-      "mem_base_ratio": 0.0998382568359375
+      "mem_base_ratio": 0.0998382568359375,
+      "cpu_stress_factor": 0.25481751635832,
+      "mem_leak_per_step": 0.45008087158203125
     },
     "productcatalogservice": {
       "cost_cores_per_rps": 0.0008214117154438437,
       "cpu_limit_cores": 0.2,
-      "mem_base_ratio": 0.0684356689453125
+      "mem_base_ratio": 0.0684356689453125,
+      "cpu_stress_factor": 0.07649378174885166,
+      "mem_leak_per_step": 0.46578216552734375
     },
     "recommendationservice": {
       "cost_cores_per_rps": 0.0007845079317303273,
       "cpu_limit_cores": 0.2,
-      "mem_base_ratio": 0.07213541666666665
+      "mem_base_ratio": 0.07213541666666665,
+      "cpu_stress_factor": 0.07175829359354759,
+      "mem_leak_per_step": 0.46393229166666666
     },
     "shippingservice": {
       "cost_cores_per_rps": 8.538788068244304e-05,
       "cpu_limit_cores": 0.2,
-      "mem_base_ratio": 0.0621795654296875
+      "mem_base_ratio": 0.0621795654296875,
+      "cpu_stress_factor": 0.03,
+      "mem_leak_per_step": 0.46891021728515625
     }
-  },
-  "llm_accuracy_v1_live": 0.7045,
-  "_note_llm": "llm_accuracy = prompt v2 danh gia offline tren 44 ngu canh EKS1 (llm_eval_v2.csv, in-sample); v1 = do truc tiep tren EKS1"
+  }
 }

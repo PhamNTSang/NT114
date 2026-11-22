@@ -20,7 +20,9 @@ def sla_ok(p99_ms: float, err_rate: float, slo_p99_ms: float, slo_err: float) ->
 
 def compute_reward(*, sla: bool, recovered_now: bool, t_recover_s: float, extra_replicas: int,
                    unsafe: bool, t_max_s: float, w: RewardWeights = RewardWeights()) -> float:
-    r_sla = 1.0 if sla else -1.0
+    # Chi phat khi vi pham SLA (0/-1), KHONG thuong +1: episode ket thuc khi phuc hoi, neu moi buoc dat SLA
+    # duoc +alpha thi agent co loi khi keo dai su co (reward hacking, phat hien 22/11 o ppo_test2).
+    r_sla = 0.0 if sla else -1.0
     r_mttr = (t_max_s - t_recover_s) / t_max_s if recovered_now else 0.0
     r_cost = -w.lam * max(0, extra_replicas)
     r_safety = -w.penalty if unsafe else 0.0

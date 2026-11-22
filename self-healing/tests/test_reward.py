@@ -23,3 +23,20 @@ def test_unsafe_penalty_dominates():
     unsafe = compute_reward(sla=True, recovered_now=False, t_recover_s=0, extra_replicas=0,
                             unsafe=True, t_max_s=300)
     assert unsafe < safe - 0.9
+
+
+def test_no_living_reward_while_sla_ok():
+    # Dat SLA nhung chua phuc hoi -> khong duoc thuong duong (tranh agent keo dai su co)
+    r = compute_reward(sla=True, recovered_now=False, t_recover_s=0, extra_replicas=0,
+                       unsafe=False, t_max_s=300)
+    assert r == 0.0
+
+
+def test_faster_recovery_gives_higher_return():
+    def ret(steps_to_recover):
+        rs = [compute_reward(sla=True, recovered_now=False, t_recover_s=0, extra_replicas=0,
+                             unsafe=False, t_max_s=300) for _ in range(steps_to_recover)]
+        rs.append(compute_reward(sla=True, recovered_now=True, t_recover_s=15 * steps_to_recover,
+                                 extra_replicas=0, unsafe=False, t_max_s=300))
+        return sum(rs)
+    assert ret(1) > ret(5) > ret(10)
