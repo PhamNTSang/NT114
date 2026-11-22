@@ -1,16 +1,13 @@
-"""Ve Hinh 5.x: du bao P99 +5 phut (LSTM, naive) so voi thuc te tren tap kiem tra.
-   python scripts/plot_forecast.py [--npz models/forecaster/val_predictions.npz] [--out ../report/figures/forecast_vs_actual.png]
-Moi khung la 1 doan lien tuc (khoi 1 gio cua tap kiem tra), truc ngang la gio thuc (UTC+7)."""
 import argparse
 import json
 from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.dates as mdates  # noqa: E402
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
+import matplotlib.dates as mdates  
+import matplotlib.pyplot as plt  
+import numpy as np  
+import pandas as pd  
 
 TZ = 7 * 3600
 LABEL = {0: "kind (vary_load)", 1: "EKS - thu thập sự cố Chaos", 2: "EKS - vary_load"}
