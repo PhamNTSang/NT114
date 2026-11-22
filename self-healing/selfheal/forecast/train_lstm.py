@@ -89,18 +89,22 @@ def export(prom_url: str, hours: float, out_csv: str) -> pd.DataFrame:
     return df
 
 
-def make_windows(df: pd.DataFrame, scaler: dict):
+def make_windows(df: pd.DataFrame, scaler: dict, with_time: bool = False):
     mn, mx = pd.Series(scaler["min"]), pd.Series(scaler["max"])
     norm = (df[mn.index] - mn) / (mx - mn + 1e-9)
     
     segment = (df.index.to_series().diff() > STEP * 1.5).cumsum().to_numpy()
-    xs, ys = [], []
+    xs, ys, ts = [], [], []
     for _, g in norm.groupby(segment):
         a = g[INPUTS].to_numpy(np.float32)
         b = g[TARGETS].to_numpy(np.float32)
+        t = g.index.to_numpy(np.float64)
         for i in range(WINDOW, len(g) - HORIZON + 1):
             xs.append(a[i - WINDOW:i])
             ys.append(b[i + HORIZON - 1])
+            ts.append(t[i + HORIZON - 1])          # thoi diem cua gia tri can du bao
+    if with_time:
+        return np.stack(xs), np.stack(ys), np.asarray(ts)
     return np.stack(xs), np.stack(ys)
 
 
@@ -119,7 +123,7 @@ def train(csv_path: str, epochs: int = 30, slo_ms: float = 200.0) -> None:
     scaler = {"min": train_df.min().to_dict(), "max": train_df.max().to_dict(),
               "p99_transform": f"log1p(clip(p99, 0, {P99_CAP}))"}
     x_tr, y_tr = make_windows(train_df, scaler)
-    x_va, y_va = make_windows(val_df, scaler)
+    x_va, y_va, t_va = make_windows(val_df, scaler, with_time=True)
     model = Forecaster()
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
@@ -162,7 +166,7 @@ def train(csv_path: str, epochs: int = 30, slo_ms: float = 200.0) -> None:
     torch.save(model.state_dict(), OUT_DIR / "forecaster.pt")
     (OUT_DIR / "scaler.json").write_text(json.dumps(scaler, indent=2))
     (OUT_DIR / "report.json").write_text(json.dumps(report, indent=2))
-    np.savez(OUT_DIR / "val_predictions.npz", pred=pred, true=true)   
+    np.savez(OUT_DIR / "val_predictions.npz", pred=pred, true=true, naive=naive, ts=t_va, targets=np.array(TARGETS))   
 
 
 if __name__ == "__main__":
