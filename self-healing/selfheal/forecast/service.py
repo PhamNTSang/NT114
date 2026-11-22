@@ -9,7 +9,8 @@ import torch
 from prometheus_client import Gauge, start_http_server
 
 from ..config import SETTINGS
-from .train_lstm import INPUTS, QUERIES, STEP, TARGETS, WINDOW, Forecaster
+from .train_lstm import (INPUTS, QUERIES, STEP, TARGETS, WINDOW, Forecaster, inverse_targets,
+                         transform_window)
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("forecaster")
@@ -50,15 +51,17 @@ def main() -> None:
     while True:
         window = recent_window(SETTINGS.prometheus_url)
         if window is not None:
-            window = np.clip(window, in_min, in_min + in_span)   
+            window = transform_window(window)                       # log1p(p99) giong luc train
+            window = np.clip(window, in_min, in_min + in_span)      # giu trong mien train
             x = (window - in_min) / in_span
             with torch.no_grad():
                 y = model(torch.from_numpy(x[None]))[0].numpy() * out_span + out_min
-            pred = dict(zip(TARGETS, np.maximum(y, 0.0)))
+            pred = dict(zip(TARGETS, np.maximum(inverse_targets(y), 0.0)))
             for name, value in pred.items():
                 FORECAST.labels(metric=METRIC_NAME[name]).set(float(value))
-            alert = (pred["p99"] > SETTINGS.slo_p99_ms or pred["cpu"] > 0.8
-                     or pred["err"] > SETTINGS.slo_err)
+            # Chi canh bao theo p99/CPU: loi do Chaos xay ra dot ngot, du bao err khong dang tin
+            # (ban dau ~79% canh bao gia). err van duoc xuat qua selfheal_forecast de theo doi.
+            alert = pred["p99"] > SETTINGS.slo_p99_ms or pred["cpu"] > 0.8
             ALERT.set(1.0 if alert else 0.0)
         time.sleep(STEP)
 

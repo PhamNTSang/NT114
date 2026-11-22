@@ -17,8 +17,43 @@ QUERIES = {
 }
 INPUTS = ["rps", "cpu", "p99", "err"]
 TARGETS = ["cpu", "p99", "err"]
-WINDOW, HORIZON, STEP = 40, 20, 15          
+WINDOW, HORIZON, STEP = 40, 20, 15
 OUT_DIR = Path("models/forecaster")
+# p99 lech manh (thuong ~25 ms, khi Chaos cham tran histogram 10000 ms): cat tran + log1p truoc khi chuan hoa.
+# Khong lam vay LSTM hoc ra gia tri trung binh (~480 ms) -> canh bao luon bat.
+P99_CAP = 2000.0
+P99_COL = INPUTS.index("p99")
+HOLDOUT_EVERY = 5                           # val = moi khoi 1 gio thu 5 (du ca kind, EKS, co/khong Chaos)
+
+
+def transform(df: pd.DataFrame) -> pd.DataFrame:
+    """Don vi goc -> khong gian cua mo hinh (dung chung cho train va service)."""
+    out = df.copy()
+    out["p99"] = np.log1p(out["p99"].clip(lower=0, upper=P99_CAP))
+    return out
+
+
+def transform_window(window: np.ndarray) -> np.ndarray:
+    """Nhu transform() nhung cho mang (WINDOW, len(INPUTS)) cua service."""
+    out = window.copy()
+    out[:, P99_COL] = np.log1p(np.clip(out[:, P99_COL], 0, P99_CAP))
+    return out
+
+
+def inverse_targets(y: np.ndarray) -> np.ndarray:
+    """Dau ra (khong gian mo hinh) -> don vi goc."""
+    out = y.copy()
+    out[..., TARGETS.index("p99")] = np.expm1(out[..., TARGETS.index("p99")])
+    return out
+
+
+def alert_scores(pred: np.ndarray, true: np.ndarray, slo_ms: float) -> dict:
+    """Do chinh xac / do phu cua canh bao 'p99 du bao > SLO' (MAE khong noi len dieu nay)."""
+    i = TARGETS.index("p99")
+    p, t = pred[:, i] > slo_ms, true[:, i] > slo_ms
+    tp = int((p & t).sum())
+    return {"precision": round(tp / max(int(p.sum()), 1), 3), "recall": round(tp / max(int(t.sum()), 1), 3),
+            "alert_rate": round(float(p.mean()), 3), "true_rate": round(float(t.mean()), 3)}
 
 
 class Forecaster(nn.Module):
@@ -73,11 +108,16 @@ def mae(pred, true):
     return np.abs(pred - true).mean(axis=0)
 
 
-def train(csv_path: str, epochs: int = 30) -> None:
-    df = pd.read_csv(csv_path, index_col=0)
-    split = int(len(df) * 0.8)
-    train_df, val_df = df.iloc[:split], df.iloc[split:]
-    scaler = {"min": train_df.min().to_dict(), "max": train_df.max().to_dict()}
+def train(csv_path: str, epochs: int = 30, slo_ms: float = 200.0) -> None:
+    torch.manual_seed(0)
+    np.random.seed(0)
+    df = transform(pd.read_csv(csv_path, index_col=0))
+    # Chia theo khoi 1 gio (khong lay 20% cuoi): 20% cuoi chi la 4 gio EKS co Chaos -> lech phan phoi voi train
+    block = ((df.index - df.index[0]) // 3600).astype(int)
+    hold = (block % HOLDOUT_EVERY) == HOLDOUT_EVERY - 1
+    train_df, val_df = df[~hold], df[hold]
+    scaler = {"min": train_df.min().to_dict(), "max": train_df.max().to_dict(),
+              "p99_transform": f"log1p(clip(p99, 0, {P99_CAP}))"}
     x_tr, y_tr = make_windows(train_df, scaler)
     x_va, y_va = make_windows(val_df, scaler)
     model = Forecaster()
@@ -107,11 +147,14 @@ def train(csv_path: str, epochs: int = 30) -> None:
     span = np.array([scaler["max"][c] - scaler["min"][c] + 1e-9 for c in TARGETS])
     low = np.array([scaler["min"][c] for c in TARGETS])
     with torch.no_grad():
-        pred = model(xv).numpy() * span + low
-    true = y_va * span + low
-    naive = x_va[:, -1, [INPUTS.index(c) for c in TARGETS]] * span + low
+        pred = inverse_targets(model(xv).numpy() * span + low)
+    true = inverse_targets(y_va * span + low)
+    naive = inverse_targets(x_va[:, -1, [INPUTS.index(c) for c in TARGETS]] * span + low)
     report = {"lstm_mae": dict(zip(TARGETS, mae(pred, true).round(4).tolist())),
               "naive_mae": dict(zip(TARGETS, mae(naive, true).round(4).tolist())),
+              f"alert_p99_gt_{int(slo_ms)}ms": {"lstm": alert_scores(pred, true, slo_ms),
+                                                "naive": alert_scores(naive, true, slo_ms)},
+              "split": f"val = moi khoi 1 gio thu {HOLDOUT_EVERY}", "p99_transform": scaler["p99_transform"],
               "n_train": len(xt), "n_val": len(xv)}
     print(json.dumps(report, indent=2))
 
@@ -129,8 +172,9 @@ if __name__ == "__main__":
     ap.add_argument("--hours", type=float, default=16)
     ap.add_argument("--csv", default="data/forecast.csv")
     ap.add_argument("--epochs", type=int, default=30)
+    ap.add_argument("--slo-ms", type=float, default=200.0, help="nguong p99 de cham canh bao (SLO EKS)")
     args = ap.parse_args()
     if args.cmd == "export":
         export(args.prom, args.hours, args.csv)
     else:
-        train(args.csv, args.epochs)
+        train(args.csv, args.epochs, args.slo_ms)
