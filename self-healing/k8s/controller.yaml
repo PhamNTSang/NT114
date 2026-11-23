@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selfheal-controller
+  namespace: selfheal
+  labels: { app: selfheal-controller }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }          
+  selector: { matchLabels: { app: selfheal-controller } }
+  template:
+    metadata: { labels: { app: selfheal-controller } }
+    spec:
+      serviceAccountName: selfheal-agent
+      containers:
+        - name: controller
+          image: hoangphuc858903/selfheal:latest
+          args: ["selfheal.controller"]
+          ports: [{ containerPort: 8002, name: metrics }]
+          envFrom:
+            - configMapRef: { name: selfheal-config }
+            - secretRef: { name: selfheal-secrets }
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1Gi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selfheal-forecaster
+  namespace: selfheal
+  labels: { app: selfheal-forecaster }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: selfheal-forecaster } }
+  template:
+    metadata: { labels: { app: selfheal-forecaster } }
+    spec:
+      containers:
+        - name: forecaster
+          image: hoangphuc858903/selfheal:latest
+          args: ["selfheal.forecast.service"]
+          ports: [{ containerPort: 8001, name: metrics }]
+          envFrom:
+            - configMapRef: { name: selfheal-config }
+          resources:
+            requests: { cpu: 100m, memory: 384Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: selfheal
+  namespace: selfheal
+  labels: { app: selfheal }
+spec:
+  selector: { app: selfheal-controller }
+  ports: [{ name: metrics, port: 8002, targetPort: 8002 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: selfheal-forecaster
+  namespace: selfheal
+  labels: { app: selfheal-forecaster }
+spec:
+  selector: { app: selfheal-forecaster }
+  ports: [{ name: metrics, port: 8001, targetPort: 8001 }]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: selfheal
+  namespace: selfheal
+  labels: { release: prometheus }
+spec:
+  selector: { matchExpressions: [{ key: app, operator: In, values: [selfheal, selfheal-forecaster] }] }
+  endpoints: [{ port: metrics, interval: 15s }]
