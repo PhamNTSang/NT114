@@ -5,6 +5,11 @@ controller:
   admissionWebhooks:
     enabled: false
 
+  # Mac dinh 5s: khi pod upstream vua tat, moi request lo gui toi IP cu phai cho 5s roi moi thu pod khac
+  # (thay o kind 23/11: RESOURCE_ADJUST/ROLLBACK -> p99 ~9s). 1s du cho mang noi bo cum.
+  config:
+    proxy-connect-timeout: "1"
+
   service:
     type: LoadBalancer
 

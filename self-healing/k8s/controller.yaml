@@ -15,6 +15,7 @@ spec:
       containers:
         - name: controller
           image: hoangphuc858903/selfheal:latest
+          imagePullPolicy: IfNotPresent   # tag :latest mac dinh la Always -> kind khong dung duoc image da kind load
           args: ["selfheal.controller"]
           ports: [{ containerPort: 8002, name: metrics }]
           envFrom:
@@ -39,6 +40,7 @@ spec:
       containers:
         - name: forecaster
           image: hoangphuc858903/selfheal:latest
+          imagePullPolicy: IfNotPresent   # tag :latest mac dinh la Always -> kind khong dung duoc image da kind load
           args: ["selfheal.forecast.service"]
           ports: [{ containerPort: 8001, name: metrics }]
           envFrom:

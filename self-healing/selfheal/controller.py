@@ -33,6 +33,16 @@ BASE_KEYS = ["rps", "lat_p99", "err_rate", "tgt_cpu", "tgt_mem"]   # baseline_me
 QUIET_SEC = 120         
 
 
+def adjusts_after_open(prev: int, current_res: dict | None, baseline_res: dict | None) -> int:
+    """So lan RESOURCE_ADJUST dang ap len 1 deployment khi mo su co moi.
+    Chi ve 0 khi tai nguyen da tro lai baseline; neu khong thi giu so cu, de MAX_RESOURCE_ADJUSTS
+    gioi han ca chuoi su co lien tiep. (23/11 tren kind: dat lai 0 moi su co -> frontend bi x1.2 tam lan
+    100m -> 432m, moi lan la 1 rollout lam p99 vot len -> lai mo su co moi.)"""
+    if baseline_res is not None and current_res == baseline_res:
+        return 0
+    return prev
+
+
 class Controller:
     def __init__(self, s=SETTINGS):
         self.s = s
@@ -91,7 +101,10 @@ class Controller:
         self.incident = {"id": uuid.uuid4().hex, "dep": dep, "rca": rca, "actions": [],
                          "tracker": EpisodeTracker(self.s.step_sec, self.s.t_max_sec, self.s.hold_steps, base),
                          "last": Action.NO_OP, "last_ts": 0.0, "cooldown": {}, "before": metrics}
-        self.k8s.adjusts[dep] = 0
+        current = self.executor.api.sanitize_for_serialization(
+            self.k8s.deployment(dep).spec.template.spec.containers[0].resources)
+        self.k8s.adjusts[dep] = adjusts_after_open(self.k8s.adjusts.get(dep, 0), current,
+                                                   self.executor.baseline_resources.get(dep))
         self.store.start(self.incident["id"], {"deployment": dep, "rca": rca.category})
         INCIDENT_OPEN.labels(deployment=dep).set(1)
         post_slack(incident_message(dep, rca, metrics))
