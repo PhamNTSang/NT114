@@ -16,6 +16,8 @@ self-healing/models/*.zip
 !self-healing/models/current.zip
 # thu muc ket qua train (ppo_s0/, bc_s1/, *_test/...) -> luu tren Drive, khong commit
 self-healing/models/*/
+# models/forecaster duoc commit: Dockerfile COPY thu muc nay, CI build tu git
+!self-healing/models/forecaster/
 self-healing/logs/
 .env
 self-healing/.venv/
