@@ -282,6 +282,11 @@ cmd_image() {
     echo "LOI: thieu models/forecaster (chay 'forecast' truoc)" >&2
     exit 1
   fi
+  if [ "$(kubectl config current-context 2>/dev/null)" = "kind-selfheal" ] && \n     kubectl -n selfheal get deploy selfheal-controller >/dev/null 2>&1; then
+    # build torch lam laptop/kind cham -> p99 vot -> controller dang chay se scale/chinh nham. Tam dung; deploy bat lai.
+    echo "Tam dung selfheal-controller trong luc build (chay lai: bash scripts/kltn.sh deploy)"
+    kubectl -n selfheal scale deploy selfheal-controller --replicas=0
+  fi
   docker build -t "$IMAGE" "$SH"
   if command -v kind >/dev/null 2>&1; then
     local clusters
