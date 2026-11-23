@@ -1,0 +1,13 @@
+.venv
+.env
+.pf.pids
+logs
+data
+results
+report
+tests
+scripts
+**/__pycache__
+models/*
+!models/current.zip
+!models/forecaster
