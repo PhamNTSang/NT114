@@ -1,4 +1,5 @@
 import logging
+import os
 import statistics
 import time
 import uuid
@@ -30,7 +31,9 @@ ACTIONS = Counter("selfheal_actions_total", "So hanh dong", ["action", "result"]
 MTTR = Histogram("selfheal_mttr_seconds", "Thoi gian phuc hoi", buckets=[15, 30, 60, 90, 120, 180, 240, 300])
 RCA_CONF = Gauge("selfheal_rca_confidence", "Do tin cay chan doan gan nhat")
 BASE_KEYS = ["rps", "lat_p99", "err_rate", "tgt_cpu", "tgt_mem"]   # baseline_metrics cho prompt RCA v2
-QUIET_SEC = 120         
+QUIET_SEC = 120          # sau khi dong su co, bo qua canh bao CHU DONG 2 phut (tranh goi Groq lien tuc)
+WARMUP_SEC = int(os.getenv("WARMUP_SEC", "120"))   # sau khi khoi dong: chi quan sat + ghi baseline
+SLO_CONFIRM = int(os.getenv("SLO_CONFIRM", "2"))   # SLO/canh bao chu dong phai lap lai N lan lien tiep
 
 
 def adjusts_after_open(prev: int, current_res: dict | None, baseline_res: dict | None) -> int:
@@ -41,6 +44,15 @@ def adjusts_after_open(prev: int, current_res: dict | None, baseline_res: dict |
     if baseline_res is not None and current_res == baseline_res:
         return 0
     return prev
+
+
+def slo_debounce(streak: int, violated: bool, confirm: int = SLO_CONFIRM) -> tuple[int, bool]:
+    """Chong bao dong gia: chi mo su co theo SLO/canh bao chu dong khi vi pham lap lai `confirm` lan lien tiep
+    (moi lan cach STEP_SEC). Tra (streak moi, co mo su co khong)."""
+    if not violated:
+        return 0, False
+    streak += 1
+    return (0, True) if streak >= confirm else (streak, False)
 
 
 class Controller:
@@ -58,9 +70,12 @@ class Controller:
         self.incident = None
         self.history = {dep: deque(maxlen=8) for dep in SERVICES}   
         self.quiet_until = 0.0
+        self.started = time.time()
+        self.slo_streak = 0
 
     #  Detect
     def detect(self):
+        warming = time.time() - self.started < WARMUP_SEC   # vua deploy/khoi dong: p99 hay vot tam thoi
         candidates, seen = [], {}
         for dep in SERVICES:
             m = self.builder.metrics(dep)
@@ -69,12 +84,22 @@ class Controller:
             score = m["anomaly"] + (1.0 if v.bad_pods else 0.0)
             if score >= self.s.anomaly_threshold:
                 candidates.append((score, dep, m))
-        if candidates:
-            return max(candidates)[1:]
         m = seen["frontend"]                                  # SLO vi pham / du bao vi pham
         slo_bad = not sla_ok(m["lat_p99"], m["err_rate"], self.s.slo_p99_ms, self.s.slo_err)
-        if slo_bad or (m["proactive_alert"] >= 1.0 and time.time() >= self.quiet_until):
+        proactive = m["proactive_alert"] >= 1.0 and time.time() >= self.quiet_until
+        if warming:
+            if not candidates and not slo_bad:
+                for dep, mm in seen.items():
+                    self.history[dep].append(mm)
+            return None
+        if candidates:                                        # pod loi / anomaly cao: mo ngay
+            self.slo_streak = 0
+            return max(candidates)[1:]
+        self.slo_streak, confirmed = slo_debounce(self.slo_streak, slo_bad or proactive)
+        if confirmed:
             return "frontend", m
+        if slo_bad or proactive:                              # dang cho xac nhan: khong ghi vao baseline
+            return None
         for dep, mm in seen.items():                          # binh thuong -> cap nhat baseline
             self.history[dep].append(mm)
         return None
@@ -161,7 +186,7 @@ class Controller:
 
     def run(self) -> None:
         start_http_server(8002)
-        log.info("Controller started (dry_run=%s)", self.s.dry_run)
+        log.info("Controller started (dry_run=%s, warmup=%ss, slo_confirm=%s)", self.s.dry_run, WARMUP_SEC, SLO_CONFIRM)
         while True:
             try:
                 if self.incident:

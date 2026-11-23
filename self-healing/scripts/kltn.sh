@@ -303,6 +303,9 @@ cmd_deploy() {
     exit 1
   fi
   kubectl apply -f k8s/rbac.yaml
+  if [ "$ctx" = "kind-selfheal" ]; then   # rbac.yaml giu SLO cua EKS (200); kind do rieng o P-02 = 305
+    kubectl -n selfheal patch configmap selfheal-config -p "{\"data\":{\"SLO_P99_MS\":\"${KIND_SLO_P99_MS:-305}\"}}"
+  fi
   kubectl -n selfheal create secret generic selfheal-secrets \
     --from-literal=GROQ_API_KEY="$GROQ_API_KEY" \
     --from-literal=SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:-}" \

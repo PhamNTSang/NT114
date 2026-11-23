@@ -15,3 +15,13 @@ def test_counter_reset_when_back_to_baseline():
 
 def test_unknown_baseline_keeps_counter():
     assert adjusts_after_open(1, UP1, None) == 1
+
+
+def test_slo_debounce_needs_two_consecutive_violations():
+    from selfheal.controller import slo_debounce
+    streak, opened = slo_debounce(0, True, confirm=2)
+    assert (streak, opened) == (1, False)          # lan 1: chua mo
+    streak, opened = slo_debounce(streak, True, confirm=2)
+    assert opened and streak == 0                  # lan 2 lien tiep: mo su co
+    streak, _ = slo_debounce(1, False, confirm=2)
+    assert streak == 0                             # dut quang -> dem lai tu dau
