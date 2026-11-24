@@ -340,7 +340,7 @@ cmd_demo() {
     echo "CANH BAO: selfheal-controller chua chay trong cum (bo qua neu dang chay controller tren laptop)." >&2
     echo "          Bat bang: bash baselines/switch.sh agent" >&2
   fi
-  SCENARIO="$scenario" TARGET="$target" "$PY" -c "import os, uuid; from selfheal.chaos.injector import ChaosInjector; ChaosInjector().inject(int(os.environ['SCENARIO']), os.environ['TARGET'], uuid.uuid4().hex, duration=120)"
+  SCENARIO="$scenario" TARGET="$target" "$PY" -c "import os, uuid; from selfheal.chaos.injector import ChaosInjector; ChaosInjector(gt_path='data/demo/ground_truth.csv').inject(int(os.environ['SCENARIO']), os.environ['TARGET'], 'demo-' + uuid.uuid4().hex[:8], duration=120)"   # tach khoi data/ground_truth.csv (du lieu EKS)
   echo "Da tiem kich ban $scenario vao $target (120s). Theo doi:"
   echo "  Grafana : kubectl -n monitoring port-forward svc/prometheus-grafana 3000:80  ->  http://localhost:3000"
   echo "  Slack   : kenh dung SLACK_WEBHOOK_URL (RCA + hanh dong cua agent)"
