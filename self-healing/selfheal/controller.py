@@ -55,6 +55,14 @@ def slo_debounce(streak: int, violated: bool, confirm: int = SLO_CONFIRM) -> tup
     return (0, True) if streak >= confirm else (streak, False)
 
 
+def slo_target(recent_rollouts: list[str], default: str = "frontend") -> str:
+    """Chon deployment de mo su co khi SLO (do tai Ingress/frontend) bi vi pham.
+    Uu tien deployment vua doi phien ban: loi o dich vu phia sau (vd productcatalogservice bi bad deploy)
+    chi lo ra o frontend; neu cu mo su co tai frontend thi LLM khong thay phien ban moi va khong ROLLBACK
+    (thu KB7 tren kind 24/11: chan doan network o frontend, p99 10 s khong phuc hoi)."""
+    return recent_rollouts[0] if recent_rollouts else default
+
+
 class Controller:
     def __init__(self, s=SETTINGS):
         self.s = s
@@ -76,11 +84,13 @@ class Controller:
     #  Detect
     def detect(self):
         warming = time.time() - self.started < WARMUP_SEC   # vua deploy/khoi dong: p99 hay vot tam thoi
-        candidates, seen = [], {}
+        candidates, seen, rollouts = [], {}, []
         for dep in SERVICES:
             m = self.builder.metrics(dep)
             v = self.k8s.view(dep)
             seen[dep] = m
+            if v.recent_rollout:
+                rollouts.append(dep)
             score = m["anomaly"] + (1.0 if v.bad_pods else 0.0)
             if score >= self.s.anomaly_threshold:
                 candidates.append((score, dep, m))
@@ -97,7 +107,10 @@ class Controller:
             return max(candidates)[1:]
         self.slo_streak, confirmed = slo_debounce(self.slo_streak, slo_bad or proactive)
         if confirmed:
-            return "frontend", m
+            dep = slo_target(rollouts)
+            if dep != "frontend":
+                log.info("SLO vi pham, %s vua doi phien ban -> mo su co tai %s", dep, dep)
+            return dep, seen[dep]
         if slo_bad or proactive:                              # dang cho xac nhan: khong ghi vao baseline
             return None
         for dep, mm in seen.items():                          # binh thuong -> cap nhat baseline

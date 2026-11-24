@@ -25,3 +25,9 @@ def test_slo_debounce_needs_two_consecutive_violations():
     assert opened and streak == 0                  # lan 2 lien tiep: mo su co
     streak, _ = slo_debounce(1, False, confirm=2)
     assert streak == 0                             # dut quang -> dem lai tu dau
+
+
+def test_slo_incident_targets_recently_redeployed_service():
+    from selfheal.controller import slo_target
+    assert slo_target(["productcatalogservice"]) == "productcatalogservice"   # KB7: loi lo o frontend nhung goc o day
+    assert slo_target([]) == "frontend"
