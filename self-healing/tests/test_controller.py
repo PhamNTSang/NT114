@@ -119,3 +119,16 @@ def test_pick_pod_ignores_stale_hint():
     assert ex._pick_pod("frontend", "frontend-new-abc") == "frontend-new-abc"
     ex.k8s = SimpleNamespace(pods=lambda dep: [])
     assert ex._pick_pod("frontend", "frontend-old-xyz") is None
+
+
+def test_init_metrics_exposes_every_action_at_zero():
+    # 25/11: chuoi TRAFFIC_SHIFT sinh ra o gia tri 1 -> increase() tren Grafana = 0. Phai co san o 0.
+    from prometheus_client import REGISTRY
+    from selfheal.controller import init_metrics
+    from selfheal.spaces import Action
+    init_metrics()
+    for action in Action:
+        for result in ("executed", "blocked"):
+            v = REGISTRY.get_sample_value("selfheal_actions_total", {"action": action.name, "result": result})
+            assert v is not None
+    assert REGISTRY.get_sample_value("selfheal_anomaly_suppressed_total", {"deployment": SERVICES[0]}) is not None

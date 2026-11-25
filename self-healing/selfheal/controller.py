@@ -64,6 +64,17 @@ def slo_debounce(streak: int, violated: bool, confirm: int = SLO_CONFIRM) -> tup
     return (0, True) if streak >= confirm else (streak, False)
 
 
+def init_metrics() -> None:
+    """Tao san moi chuoi nhan o gia tri 0. Counter co nhan chi xuat hien tu lan .inc() dau tien (gia tri 1),
+    nen increase() tren Grafana bo sot lan dau cua moi loai hanh dong (25/11 kind: TRAFFIC_SHIFT hien 0, thuc te 1).
+    Chi doi cach xuat metric, khong doi hanh vi controller."""
+    for action in Action:
+        for result in ("executed", "blocked"):
+            ACTIONS.labels(action=action.name, result=result)
+    for dep in SERVICES:
+        SUPPRESSED.labels(deployment=dep)
+
+
 def anomaly_trusted(drifted: bool, touched_at: float | None, now: float, hold: float = ANOMALY_HOLD_SEC) -> bool:
     """Co dung diem anomaly de MO su co cho 1 deployment khong.
     Khong, neu cau hinh dang khac ban goc (do chinh agent doi) hoac agent vua tac dong < `hold` giay.
@@ -243,6 +254,7 @@ class Controller:
         self.quiet_until = time.time() + QUIET_SEC
 
     def run(self) -> None:
+        init_metrics()
         start_http_server(8002)
         log.info("Controller started (dry_run=%s, warmup=%ss, slo_confirm=%s)", self.s.dry_run, WARMUP_SEC, SLO_CONFIRM)
         while True:
