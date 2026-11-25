@@ -33,7 +33,10 @@ RCA_CONF = Gauge("selfheal_rca_confidence", "Do tin cay chan doan gan nhat")
 BASE_KEYS = ["rps", "lat_p99", "err_rate", "tgt_cpu", "tgt_mem"]   # baseline_metrics cho prompt RCA v2
 QUIET_SEC = 120          # sau khi dong su co, bo qua canh bao CHU DONG 2 phut (tranh goi Groq lien tuc)
 WARMUP_SEC = int(os.getenv("WARMUP_SEC", "120"))   # sau khi khoi dong: chi quan sat + ghi baseline
-SLO_CONFIRM = int(os.getenv("SLO_CONFIRM", "2"))   # SLO/canh bao chu dong phai lap lai N lan lien tiep
+# SLO/canh bao chu dong phai lap lai N lan doc lien tiep (moi lan STEP_SEC=15s). p99 lay tu ingress-nginx,
+# ma ServiceMonitor ingress scrape 30s/lan -> 2 lan doc thuong la CUNG 1 mau. N=3 => it nhat 2 mau do khac nhau
+# (25/11 kind: voi N=2, 4 dot nhieu 1 mau trong 30 phut deu se mo su co gia).
+SLO_CONFIRM = int(os.getenv("SLO_CONFIRM", "3"))
 
 
 def adjusts_after_open(prev: int, current_res: dict | None, baseline_res: dict | None) -> int:

@@ -27,6 +27,17 @@ def test_slo_debounce_needs_two_consecutive_violations():
     assert streak == 0                             # dut quang -> dem lai tu dau
 
 
+def test_slo_debounce_default_needs_two_distinct_scrapes():
+    # scrape ingress 30s, doc 15s: 1 mau nhieu bi doc 2 lan -> mac dinh phai chua mo su co
+    from selfheal.controller import SLO_CONFIRM, slo_debounce
+    assert SLO_CONFIRM >= 3
+    streak, opened = slo_debounce(0, True, confirm=3)
+    streak, opened = slo_debounce(streak, True, confirm=3)
+    assert not opened                              # 2 lan doc = 1 mau: chua mo
+    streak, opened = slo_debounce(streak, True, confirm=3)
+    assert opened                                  # lan 3 = mau thu 2: mo su co
+
+
 def test_slo_incident_targets_recently_redeployed_service():
     from selfheal.controller import slo_target
     assert slo_target(["productcatalogservice"]) == "productcatalogservice"   # KB7: loi lo o frontend nhung goc o day
