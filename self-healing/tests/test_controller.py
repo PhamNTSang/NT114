@@ -42,3 +42,80 @@ def test_slo_incident_targets_recently_redeployed_service():
     from selfheal.controller import slo_target
     assert slo_target(["productcatalogservice"]) == "productcatalogservice"   # KB7: loi lo o frontend nhung goc o day
     assert slo_target([]) == "frontend"
+
+
+# ---- 25/11: khong tin anomaly cua deployment dang bi agent thay doi ----
+import time
+from types import SimpleNamespace
+
+from selfheal.config import SERVICES
+
+
+def test_anomaly_trusted_rules():
+    from selfheal.controller import anomaly_trusted
+    now = 1000.0
+    assert anomaly_trusted(False, None, now)                       # chua tung tac dong, cau hinh goc
+    assert not anomaly_trusted(True, None, now)                    # cau hinh da doi (vd RESOURCE_ADJUST)
+    assert not anomaly_trusted(False, now - 60, now, hold=180)     # vua scale/quarantine 60 s truoc
+    assert anomaly_trusted(False, now - 200, now, hold=180)        # het thoi gian cho, cau hinh da ve goc
+
+
+def _controller(state: dict):
+    """Controller gia: state[dep] = (anomaly, bad_pods, replicas, resources)."""
+    from selfheal.controller import Controller
+    c = object.__new__(Controller)
+    c.s = SimpleNamespace(anomaly_threshold=0.7, slo_p99_ms=305, slo_err=0.01)
+    metrics = lambda dep: {"anomaly": state.get(dep, (0.1,))[0], "lat_p99": 25.0, "err_rate": 0.0,
+                           "proactive_alert": 0.0}
+    c.builder = SimpleNamespace(metrics=metrics)
+    view = lambda dep: SimpleNamespace(bad_pods=state.get(dep, (0, 0))[1], recent_rollout=False)
+    dep_obj = lambda dep: SimpleNamespace(spec=SimpleNamespace(
+        replicas=state.get(dep, (0, 0, 1))[2],
+        template=SimpleNamespace(spec=SimpleNamespace(containers=[SimpleNamespace(
+            resources=state.get(dep, (0, 0, 1, BASE))[3])]))))
+    c.k8s = SimpleNamespace(view=view, deployment=dep_obj)
+    c.executor = SimpleNamespace(baseline_replicas={d: 1 for d in SERVICES},
+                                 baseline_resources={d: BASE for d in SERVICES},
+                                 api=SimpleNamespace(sanitize_for_serialization=lambda x: x))
+    c.history = {d: [] for d in SERVICES}
+    c.started, c.quiet_until, c.slo_streak = time.time() - 10_000, 0.0, 0
+    c.touched, c.suppressing = {}, set()
+    return c
+
+
+def test_detect_ignores_anomaly_of_adjusted_deployment():
+    # 25/11: cartservice da bi RESOURCE_ADJUST, anomaly 0.82, P99 binh thuong -> khong mo su co moi
+    c = _controller({"cartservice": (0.82, 0, 1, UP1)})
+    assert c.detect() is None
+    assert "cartservice" in c.suppressing
+
+
+def test_detect_ignores_anomaly_right_after_action_even_if_spec_back_to_baseline():
+    c = _controller({"cartservice": (0.82, 0, 1, BASE)})
+    c.touched["cartservice"] = time.time() - 30                    # vd SCALE_UP roi SCALE_DOWN ve 1
+    assert c.detect() is None
+
+
+def test_detect_still_opens_for_untouched_deployment():
+    # KB3 vao frontend trong khi cartservice dang bi chan: frontend van phai mo su co
+    c = _controller({"cartservice": (0.82, 0, 2, UP1), "frontend": (0.76, 0, 1, BASE)})
+    found = c.detect()
+    assert found is not None and found[0] == "frontend"
+
+
+def test_detect_still_opens_on_bad_pods_of_adjusted_deployment():
+    c = _controller({"cartservice": (0.82, 1, 1, UP1)})            # pod loi: khong bi chan
+    found = c.detect()
+    assert found is not None and found[0] == "cartservice"
+
+
+def test_pick_pod_ignores_stale_hint():
+    # hint tu Prometheus la pod vua bi thay sau rollout -> phai chon pod con song (truoc day: 404)
+    from selfheal.executor import ActionExecutor
+    ex = object.__new__(ActionExecutor)
+    pod = lambda n: SimpleNamespace(metadata=SimpleNamespace(name=n))
+    ex.k8s = SimpleNamespace(pods=lambda dep: [pod("frontend-new-abc")])
+    assert ex._pick_pod("frontend", "frontend-old-xyz") == "frontend-new-abc"
+    assert ex._pick_pod("frontend", "frontend-new-abc") == "frontend-new-abc"
+    ex.k8s = SimpleNamespace(pods=lambda dep: [])
+    assert ex._pick_pod("frontend", "frontend-old-xyz") is None

@@ -37,6 +37,12 @@ WARMUP_SEC = int(os.getenv("WARMUP_SEC", "120"))   # sau khi khoi dong: chi quan
 # ma ServiceMonitor ingress scrape 30s/lan -> 2 lan doc thuong la CUNG 1 mau. N=3 => it nhat 2 mau do khac nhau
 # (25/11 kind: voi N=2, 4 dot nhieu 1 mau trong 30 phut deu se mo su co gia).
 SLO_CONFIRM = int(os.getenv("SLO_CONFIRM", "3"))
+# Isolation Forest hoc tren CPU/RAM tinh theo TI LE so voi limit cua cau hinh goc. Khi chinh controller doi
+# resources/replicas thi ti le doi theo -> diem anomaly cua deployment do khong con dang tin (25/11 kind:
+# 1 duong tinh gia o cartservice -> RESOURCE_ADJUST -> anomaly van >= 0.7 -> 4 su co lien tiep).
+ANOMALY_HOLD_SEC = int(os.getenv("ANOMALY_HOLD_SEC", "180"))   # rollout/pod moi sau 1 hanh dong
+SUPPRESSED = Counter("selfheal_anomaly_suppressed_total",
+                     "So lan doc anomaly >= nguong bi bo qua vi deployment dang bi agent thay doi", ["deployment"])
 
 
 def adjusts_after_open(prev: int, current_res: dict | None, baseline_res: dict | None) -> int:
@@ -56,6 +62,15 @@ def slo_debounce(streak: int, violated: bool, confirm: int = SLO_CONFIRM) -> tup
         return 0, False
     streak += 1
     return (0, True) if streak >= confirm else (streak, False)
+
+
+def anomaly_trusted(drifted: bool, touched_at: float | None, now: float, hold: float = ANOMALY_HOLD_SEC) -> bool:
+    """Co dung diem anomaly de MO su co cho 1 deployment khong.
+    Khong, neu cau hinh dang khac ban goc (do chinh agent doi) hoac agent vua tac dong < `hold` giay.
+    Chi chan duong anomaly: pod loi va vi pham SLO van mo su co binh thuong."""
+    if drifted:
+        return False
+    return touched_at is None or now - touched_at >= hold
 
 
 def slo_target(recent_rollouts: list[str], default: str = "frontend") -> str:
@@ -83,6 +98,28 @@ class Controller:
         self.quiet_until = 0.0
         self.started = time.time()
         self.slo_streak = 0
+        self.touched: dict[str, float] = {}      # deployment -> luc agent tac dong lan cuoi
+        self.suppressing: set[str] = set()       # chi de ghi log 1 lan moi dot bi chan
+
+    def drifted(self, dep: str) -> bool:
+        """Replicas/resources hien tai khac ban goc chup luc controller khoi dong."""
+        d = self.k8s.deployment(dep)
+        if (d.spec.replicas or 0) != self.executor.baseline_replicas.get(dep, d.spec.replicas or 0):
+            return True
+        base = self.executor.baseline_resources.get(dep)
+        current = self.executor.api.sanitize_for_serialization(d.spec.template.spec.containers[0].resources)
+        return base is not None and current != base
+
+    def anomaly_ok(self, dep: str) -> bool:
+        trusted = anomaly_trusted(self.drifted(dep), self.touched.get(dep), time.time())
+        if trusted:
+            self.suppressing.discard(dep)
+        else:
+            SUPPRESSED.labels(deployment=dep).inc()
+            if dep not in self.suppressing:
+                self.suppressing.add(dep)
+                log.info("Bo qua anomaly cua %s: cau hinh dang khac ban goc hoac agent vua tac dong", dep)
+        return trusted
 
     #  Detect
     def detect(self):
@@ -94,7 +131,10 @@ class Controller:
             seen[dep] = m
             if v.recent_rollout:
                 rollouts.append(dep)
-            score = m["anomaly"] + (1.0 if v.bad_pods else 0.0)
+            anomaly = m["anomaly"]
+            if anomaly >= self.s.anomaly_threshold and not v.bad_pods and not self.anomaly_ok(dep):
+                anomaly = 0.0                                 # diem cua cau hinh da bi agent doi: khong tin
+            score = anomaly + (1.0 if v.bad_pods else 0.0)
             if score >= self.s.anomaly_threshold:
                 candidates.append((score, dep, m))
         m = seen["frontend"]                                  # SLO vi pham / du bao vi pham
@@ -166,6 +206,8 @@ class Controller:
             detail = self.executor.execute(executed, dep, pod_hint=self.builder.worst_pod(dep))
             inc["cooldown"][executed], inc["last_ts"] = now + self.s.cooldown_sec, now
             inc["actions"].append(executed.name)
+            if not detail.startswith(("error", "skip", "dry-run", "noop")):
+                self.touched[dep] = time.time()
             if executed == Action.RESOURCE_ADJUST:
                 self.k8s.adjusts[dep] += 1
             log.info("%s %s -> %s", dep, executed.name, detail)

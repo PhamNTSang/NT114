@@ -39,10 +39,12 @@ class ActionExecutor:
             return f"error {exc.status}"
 
     def _pick_pod(self, dep: str, pod_hint: str | None) -> str | None:
-        if pod_hint:
+        # pod_hint lay tu Prometheus (rate[1m]) co the la pod vua bi thay sau rollout -> 404 (25/11 kind:
+        # TRAFFIC_SHIFT frontend ngay sau RESOURCE_ADJUST). Chi dung hint neu pod do con thuoc deployment.
+        names = [p.metadata.name for p in self.k8s.pods(dep)]
+        if pod_hint in names:
             return pod_hint
-        pods = self.k8s.pods(dep)
-        return pods[0].metadata.name if pods else None
+        return names[0] if names else None
 
     # ---------- 7 hanh dong ----------
     def restart_pod(self, dep: str, pod_hint=None) -> str:
