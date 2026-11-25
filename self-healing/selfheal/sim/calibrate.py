@@ -36,10 +36,15 @@ def main(ts_csv: str, prom: str | None, llm_eval: str | None, out: str) -> None:
     profiles = {}
     for svc, g in base.groupby("target"):
         per_pod_limit = (g.tgt_cpu_limit / g.replicas.clip(lower=1)).median()
+        cpu_base, mem_base = float(g.tgt_cpu.median()), float(g.tgt_mem.median())
         profiles[svc] = {"cost_cores_per_rps": float((g.tgt_cpu_cores / g.rps.clip(lower=1)).median()),
                          "cpu_limit_cores": float(per_pod_limit),
-                         "mem_base_ratio": float(g.tgt_mem.median())}
+                         "mem_base_ratio": mem_base,
+                         "cpu_stress_factor": float(np.clip(cpu_base / 0.97, 0.03, 0.9)),
+                         "mem_leak_per_step": float((1.0 - mem_base) / 2)}
     params["profiles"] = profiles
+    params["cpu_stress_factor"] = float(np.median([p["cpu_stress_factor"] for p in profiles.values()]))
+    params["mem_leak_per_step"] = float(np.median([p["mem_leak_per_step"] for p in profiles.values()]))
 
     
     inc = df[df.phase == "incident"]
@@ -57,11 +62,6 @@ def main(ts_csv: str, prom: str | None, llm_eval: str | None, out: str) -> None:
         value = delta(scenario)
         if value and value > 0:
             params[key] = value
-    g4 = inc[inc.scenario == 4].sort_values(["episode_id", "step"])
-    if not g4.empty:
-        slope = g4.groupby("episode_id").tgt_mem.diff().clip(lower=0)
-        params["mem_leak_per_step"] = float(slope[slope > 0].median())
-
     
     if prom:
         steps = startup_steps_from_prometheus(prom)

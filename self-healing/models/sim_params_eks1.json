@@ -1,0 +1,63 @@
+{
+  "l0_ms": 21.57758828934202,
+  "cost_cores_per_rps": 0.003,
+  "cpu_limit_cores": 0.2,
+  "base_rps": 18.066666666666663,
+  "mem_base_ratio": 0.45,
+  "startup_steps": [
+    1,
+    2
+  ],
+  "backoff_steps": [
+    2,
+    4
+  ],
+  "fault_steps": [
+    8,
+    16
+  ],
+  "net_delay_ms": 3532.746412645754,
+  "bad_deploy_ms": 9975.109117546646,
+  "bad_deploy_err": 0.05,
+  "cpu_stress_factor": 0.35,
+  "mem_leak_per_step": 0.017157118055555497,
+  "spike_mult": 4.0,
+  "cluster_free_cores": 1.5,
+  "llm_accuracy": 0.9091,
+  "obs_noise": 0.03,
+  "forecast_noise": 0.1,
+  "profiles": {
+    "cartservice": {
+      "cost_cores_per_rps": 0.0007366523676936086,
+      "cpu_limit_cores": 0.3,
+      "mem_base_ratio": 0.44012451171875
+    },
+    "currencyservice": {
+      "cost_cores_per_rps": 0.0026621671227754825,
+      "cpu_limit_cores": 0.2,
+      "mem_base_ratio": 0.24322509765625
+    },
+    "frontend": {
+      "cost_cores_per_rps": 0.0027113723510784147,
+      "cpu_limit_cores": 0.2,
+      "mem_base_ratio": 0.0998382568359375
+    },
+    "productcatalogservice": {
+      "cost_cores_per_rps": 0.0008214117154438437,
+      "cpu_limit_cores": 0.2,
+      "mem_base_ratio": 0.0684356689453125
+    },
+    "recommendationservice": {
+      "cost_cores_per_rps": 0.0007845079317303273,
+      "cpu_limit_cores": 0.2,
+      "mem_base_ratio": 0.07213541666666665
+    },
+    "shippingservice": {
+      "cost_cores_per_rps": 8.538788068244304e-05,
+      "cpu_limit_cores": 0.2,
+      "mem_base_ratio": 0.0621795654296875
+    }
+  },
+  "llm_accuracy_v1_live": 0.7045,
+  "_note_llm": "llm_accuracy = prompt v2 danh gia offline tren 44 ngu canh EKS1 (llm_eval_v2.csv, in-sample); v1 = do truc tiep tren EKS1"
+}

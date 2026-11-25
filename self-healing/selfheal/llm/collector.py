@@ -20,7 +20,7 @@ def _tail(k8s, pod: str, previous: bool = False, lines: int = MAX_LINES) -> str:
         return ""
 
 
-def collect_context(k8s, dep: str, metrics: dict) -> dict:
+def collect_context(k8s, dep: str, metrics: dict, baseline: dict | None = None) -> dict:
     since = datetime.now(timezone.utc) - timedelta(seconds=WINDOW_S)
     events = []
     for e in k8s.core.list_namespaced_event(k8s.s.namespace).items:
@@ -62,4 +62,5 @@ def collect_context(k8s, dep: str, metrics: dict) -> dict:
         "pod_status": pod_status,
         "events": events[-20:],
         "logs": logs,
+        "baseline_metrics": baseline or {},
     }

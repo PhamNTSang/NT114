@@ -1,0 +1,30 @@
+{
+  "lstm_mae": {
+    "cpu": 0.0235,
+    "p99": 410.6006,
+    "err": 0.012
+  },
+  "naive_mae": {
+    "cpu": 0.0263,
+    "p99": 613.333,
+    "err": 0.0031
+  },
+  "alert_p99_gt_200ms": {
+    "lstm": {
+      "precision": 0.617,
+      "recall": 0.564,
+      "alert_rate": 0.486,
+      "true_rate": 0.532
+    },
+    "naive": {
+      "precision": 0.482,
+      "recall": 0.457,
+      "alert_rate": 0.505,
+      "true_rate": 0.532
+    }
+  },
+  "split": "val = moi khoi 1 gio thu 5",
+  "p99_transform": "log1p(clip(p99, 0, 2000.0))",
+  "n_train": 3937,
+  "n_val": 543
+}

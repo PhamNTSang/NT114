@@ -282,6 +282,11 @@ cmd_image() {
     echo "LOI: thieu models/forecaster (chay 'forecast' truoc)" >&2
     exit 1
   fi
+  if [ "$(kubectl config current-context 2>/dev/null)" = "kind-selfheal" ] && \n     kubectl -n selfheal get deploy selfheal-controller >/dev/null 2>&1; then
+    # build torch lam laptop/kind cham -> p99 vot -> controller dang chay se scale/chinh nham. Tam dung; deploy bat lai.
+    echo "Tam dung selfheal-controller trong luc build (chay lai: bash scripts/kltn.sh deploy)"
+    kubectl -n selfheal scale deploy selfheal-controller --replicas=0
+  fi
   docker build -t "$IMAGE" "$SH"
   if command -v kind >/dev/null 2>&1; then
     local clusters
@@ -303,6 +308,9 @@ cmd_deploy() {
     exit 1
   fi
   kubectl apply -f k8s/rbac.yaml
+  if [ "$ctx" = "kind-selfheal" ]; then   # rbac.yaml giu SLO cua EKS (200); kind do rieng o P-02 = 305
+    kubectl -n selfheal patch configmap selfheal-config -p "{\"data\":{\"SLO_P99_MS\":\"${KIND_SLO_P99_MS:-305}\"}}"
+  fi
   kubectl -n selfheal create secret generic selfheal-secrets \
     --from-literal=GROQ_API_KEY="$GROQ_API_KEY" \
     --from-literal=SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:-}" \
@@ -332,7 +340,7 @@ cmd_demo() {
     echo "CANH BAO: selfheal-controller chua chay trong cum (bo qua neu dang chay controller tren laptop)." >&2
     echo "          Bat bang: bash baselines/switch.sh agent" >&2
   fi
-  SCENARIO="$scenario" TARGET="$target" "$PY" -c "import os, uuid; from selfheal.chaos.injector import ChaosInjector; ChaosInjector().inject(int(os.environ['SCENARIO']), os.environ['TARGET'], uuid.uuid4().hex, duration=120)"
+  SCENARIO="$scenario" TARGET="$target" "$PY" -c "import os, uuid; from selfheal.chaos.injector import ChaosInjector; ChaosInjector(gt_path='data/demo/ground_truth.csv').inject(int(os.environ['SCENARIO']), os.environ['TARGET'], 'demo-' + uuid.uuid4().hex[:8], duration=120)"   # tach khoi data/ground_truth.csv (du lieu EKS)
   echo "Da tiem kich ban $scenario vao $target (120s). Theo doi:"
   echo "  Grafana : kubectl -n monitoring port-forward svc/prometheus-grafana 3000:80  ->  http://localhost:3000"
   echo "  Slack   : kenh dung SLACK_WEBHOOK_URL (RCA + hanh dong cua agent)"

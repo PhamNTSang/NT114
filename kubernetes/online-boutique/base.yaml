@@ -23,6 +23,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: server
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -184,6 +188,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: server
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -256,6 +264,10 @@ spec:
         runAsUser: 1000
       containers:
         - name: server
+          lifecycle:
+            preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+              sleep:
+                seconds: 3
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -338,6 +350,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: server
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -412,6 +428,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: server
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -484,6 +504,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: redis
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -555,6 +579,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: server
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -630,6 +658,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: server
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -704,6 +736,10 @@ spec:
         runAsUser: 1000
       containers:
         - name: server
+          lifecycle:
+            preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+              sleep:
+                seconds: 3
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -831,6 +867,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: server
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -908,6 +948,10 @@ spec:
         runAsUser: 1000
       containers:
       - name: server
+        lifecycle:
+          preStop:                 # cho ingress/kube-proxy go endpoint truoc khi pod tat (tranh cho 5s khi rollout)
+            sleep:
+              seconds: 3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

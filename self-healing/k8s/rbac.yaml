@@ -103,9 +103,11 @@ metadata:
   namespace: selfheal
 data:
   AGENT_ENABLED: "true"        
-  SLO_P99_MS: "305"           
+  SLO_P99_MS: "200"           
   SLO_ERR: "0.01"
-  REQUIRE_APPROVAL: ""         
+  # Ingress duoc scrape 30s/lan, controller doc 15s/lan -> 3 lan doc lien tiep = it nhat 2 mau do khac nhau
+  SLO_CONFIRM: "3"
+  REQUIRE_APPROVAL: ""
   LLM_BACKEND: "groq"         
   LLM_MODEL: "openai/gpt-oss-120b"
   LLM_FALLBACK_MODEL: "openai/gpt-oss-20b"   

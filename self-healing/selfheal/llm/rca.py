@@ -28,7 +28,27 @@ Quy tac:
 - affected_component la Deployment gay ra su co (co the khac Deployment dang giam sat,
   vi du frontend bao loi do dich vu phia sau cham).
 - explanation viet bang tieng Viet, 2-3 cau, danh cho quan tri vien.
-- suggested_action chi de tham khao; quyet dinh cuoi cung do RL Agent va Safety Module dua ra."""
+- suggested_action chi de tham khao; quyet dinh cuoi cung do RL Agent va Safety Module dua ra.
+
+Y nghia cac truong trong metrics (cua Deployment dang giam sat):
+- lat_p95, lat_p99: do tre (ms) do tai Ingress; 10000 la tran thang do (>= 10 s).
+- err_rate: ti le request loi (0-1). rps: so request moi giay.
+- tgt_cpu, tgt_mem: muc dung CPU / bo nho TINH THEO TI LE so voi limit cua container (0-1; 1 = cham limit).
+  Vi du tgt_cpu = 0.5 nghia la dung 50% CPU limit, KHONG phai 0.5 core.
+- restarts_5m: so lan restart trong 5 phut. anomaly: diem bat thuong 0-1 (Isolation Forest).
+- pred_cpu, pred_lat: gia tri du bao; 0 = chua co du bao, bo qua.
+- baseline_metrics (neu co): trung vi cac chi so tren ngay TRUOC su co. Luon so sanh metrics voi baseline_metrics.
+
+Goi y phan biet (ap dung theo thu tu):
+1. deployment.new_version_last_30min = true va do tre hoac loi tang -> bad_deployment.
+2. last_terminated_reason = OOMKilled, hoac tgt_mem gan 1 -> memory (khong phai pod_crash).
+3. Container restart / CrashLoopBackOff / pod khong Ready ma khong phai OOMKilled -> pod_crash.
+4. rps tang ro so voi baseline (>= 1.5 lan) kem do tre tang -> cpu (qua tai do luu luong tang dot bien),
+   affected_component la Deployment nhan luu luong.
+5. Do tre tang va tgt_cpu tang ro so voi baseline (>= 1.5 lan), du chua cham limit -> cpu
+   (CPU bi tranh chap/throttling lam xu ly cham).
+6. Do tre tang manh nhung tgt_cpu, tgt_mem va rps gan baseline, khong restart, khong phien ban moi -> network.
+Chi dung unknown khi bang chung thuc su mau thuan."""
 
 
 def render_prompt(ctx: dict) -> str:
