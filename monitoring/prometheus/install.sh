@@ -33,6 +33,7 @@ echo "Provisioning NT114 Grafana dashboards"
 kubectl -n monitoring create configmap nt114-grafana-dashboards \
   --from-file=k8s-cluster-overview.json="${DASHBOARD_DIR}/k8s-cluster-overview.json" \
   --from-file=online-boutique-dashboard.json="${DASHBOARD_DIR}/online-boutique-dashboard.json" \
+  --from-file=selfheal-agent.json="${DASHBOARD_DIR}/selfheal-agent.json" \
   --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n monitoring label configmap nt114-grafana-dashboards grafana_dashboard=1 --overwrite
 
