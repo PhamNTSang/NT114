@@ -340,6 +340,23 @@ cmd_demo() {
     echo "CANH BAO: selfheal-controller chua chay trong cum (bo qua neu dang chay controller tren laptop)." >&2
     echo "          Bat bang: bash baselines/switch.sh agent" >&2
   fi
+  # Chi tiem khi cum on dinh (giong LiveEnv._wait_steady) + khong co su co dang mo, anomaly < nguong.
+  # SKIP_STEADY=1 bo qua; STEADY_ONLY=1 chi kiem tra roi thoat (khong tiem); STEADY_TIMEOUT mac dinh 600 s.
+  if [ "${SKIP_STEADY:-0}" != "1" ]; then
+    use_prom
+    local slo_p99 slo_err
+    slo_p99="$(kubectl -n selfheal get configmap selfheal-config -o jsonpath='{.data.SLO_P99_MS}' 2>/dev/null || true)"
+    slo_err="$(kubectl -n selfheal get configmap selfheal-config -o jsonpath='{.data.SLO_ERR}' 2>/dev/null || true)"
+    if ! "$PY" -m selfheal.chaos.steady --slo-p99 "${slo_p99:-200}" --slo-err "${slo_err:-0.01}" \
+        --timeout "${STEADY_TIMEOUT:-600}" --prom "$PROMETHEUS_URL"; then
+      echo "LOI: cum chua on dinh (hoac khong doc duoc Prometheus) -> KHONG tiem. Thu lai sau, hoac SKIP_STEADY=1 de bo qua." >&2
+      exit 1
+    fi
+  fi
+  if [ "${STEADY_ONLY:-0}" = "1" ]; then
+    echo "STEADY_ONLY=1: cum dang on dinh, khong tiem."
+    return 0
+  fi
   SCENARIO="$scenario" TARGET="$target" "$PY" -c "import os, uuid; from selfheal.chaos.injector import ChaosInjector; ChaosInjector(gt_path='data/demo/ground_truth.csv').inject(int(os.environ['SCENARIO']), os.environ['TARGET'], 'demo-' + uuid.uuid4().hex[:8], duration=120)"   # tach khoi data/ground_truth.csv (du lieu EKS)
   echo "Da tiem kich ban $scenario vao $target (120s). Theo doi:"
   echo "  Grafana : kubectl -n monitoring port-forward svc/prometheus-grafana 3000:80  ->  http://localhost:3000"
@@ -400,7 +417,8 @@ Live, deploy, demo:
   live-all            lan luot native hpa keda rule hybrid
   image               docker build + kind load (IMAGE mac dinh hoangphuc858903/selfheal:dev)
   deploy              rbac + secret + controller.yaml + set image (can GROQ_API_KEY)
-  demo                tiem su co; SCENARIO (mac dinh 3), TARGET (mac dinh frontend)
+  demo                tiem su co; SCENARIO (mac dinh 3), TARGET (mac dinh frontend); cho cum on dinh truoc
+                      (SKIP_STEADY=1 bo qua, STEADY_ONLY=1 chi kiem tra, STEADY_TIMEOUT=600)
   clean               don moi su co Chaos + tra tai nen ve 30 user
 
 EKS:
