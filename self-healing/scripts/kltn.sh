@@ -365,6 +365,24 @@ cmd_demo() {
   echo "  Don dep : bash scripts/kltn.sh clean   (bat buoc voi kich ban 2 va 6)"
 }
 
+cmd_watch() {     # in trang thai cum moi 15 s (quay video demo); Ctrl+C de dung
+  use_prom
+  local slo
+  slo="$(kubectl -n selfheal get configmap selfheal-config -o jsonpath='{.data.SLO_P99_MS}' 2>/dev/null || true)"
+  "$PY" -m selfheal.watch --prom "$PROMETHEUS_URL" --slo "${slo:-200}"
+}
+
+cmd_logs() {      # log controller gon cho video: bo /metrics, doi gio UTC -> gio VN (+7), rut gon dong goi Groq
+  kubectl -n selfheal logs deploy/selfheal-controller -f --since="${SINCE:-10m}" 2>&1 | awk '
+    /GET \/metrics|matplotlib/ { next }
+    match($0, /^[0-9-]+ [0-9][0-9]:[0-9][0-9]:[0-9][0-9],[0-9]+ [A-Z]+ /) {
+      split(substr($2, 1, 8), t, ":"); h = (t[1] + 7) % 24; rest = substr($0, RLENGTH + 1)
+      sub(/^controller /, "", rest)
+      if (rest ~ /api\.groq\.com/) rest = "LLM (Groq): chan doan / giai thich"
+      printf "%02d:%s:%s %s\n", h, t[2], t[3], rest; fflush(); next }
+    { print; fflush() }'
+}
+
 cmd_clean() {
   "$PY" -c "from selfheal.chaos.injector import ChaosInjector; ChaosInjector().cleanup_all()"
 }
@@ -419,6 +437,8 @@ Live, deploy, demo:
   deploy              rbac + secret + controller.yaml + set image (can GROQ_API_KEY)
   demo                tiem su co; SCENARIO (mac dinh 3), TARGET (mac dinh frontend); cho cum on dinh truoc
                       (SKIP_STEADY=1 bo qua, STEADY_ONLY=1 chi kiem tra, STEADY_TIMEOUT=600)
+  watch               in trang thai cum moi 15 s: P99, su co dang mo, anomaly, replicas (Ctrl+C de dung)
+  logs                log controller gon, gio VN (SINCE=10m mac dinh; Ctrl+C de dung)
   clean               don moi su co Chaos + tra tai nen ve 30 user
 
 EKS:
@@ -456,6 +476,8 @@ case "$cmd" in
   image)          cmd_image ;;
   deploy)         cmd_deploy ;;
   demo)           cmd_demo ;;
+  watch)          cmd_watch ;;
+  logs)           cmd_logs ;;
   clean)          cmd_clean ;;
   eks-up)         cmd_eks_up ;;
   eks-down)       cmd_eks_down ;;
