@@ -654,7 +654,8 @@
               }
             ]
           },
-          "noValue": "Không có hành động"
+          "noValue": "Không có hành động",
+          "min": 0
         }
       },
       "gridPos": {
