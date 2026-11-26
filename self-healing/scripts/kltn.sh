@@ -315,9 +315,9 @@ cmd_deploy() {
     --from-literal=GROQ_API_KEY="$GROQ_API_KEY" \
     --from-literal=SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:-}" \
     --dry-run=client -o yaml | kubectl apply -f -
-  kubectl apply -f k8s/controller.yaml
-  kubectl -n selfheal set image deploy/selfheal-controller controller="$IMAGE"
-  kubectl -n selfheal set image deploy/selfheal-forecaster forecaster="$IMAGE"
+  # Thay image ngay trong manifest roi moi apply. Truoc day apply ':latest' roi 'set image' -> pod ':latest'
+  # dang keo image (nang, co torch) khong xoa duoc, controller dung Recreate nen rollout ket "0 out of 1" (26/11 kind).
+  sed "s#hoangphuc858903/selfheal:latest#${IMAGE}#g" k8s/controller.yaml | kubectl apply -f -
 
   kubectl -n selfheal scale deploy selfheal-controller --replicas=1
   kubectl -n selfheal rollout status deploy/selfheal-controller --timeout=300s
