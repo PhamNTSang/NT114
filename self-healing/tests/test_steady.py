@@ -9,11 +9,11 @@ def test_calm_cluster_is_steady():
 
 
 def test_each_condition_blocks_injection():
-    cases = [{"p99_ms": 3615.0},            # 26/11 16:49: nhieu host, P99 3,6 s
-             {"p99_ms": None},              # chua co tai nen
+    cases = [{"p99_ms": 3615.0},           
+             {"p99_ms": None},              
              {"err": 0.05},
-             {"incident": 1.0},             # controller dang ban -> kich ban moi bi gop vao su co cu
-             {"anomaly": 0.75},             # controller se mo su co ngay
+             {"incident": 1.0},             
+             {"anomaly": 0.75},            
              {"unavailable": 1.0}]
     for change in cases:
         ok, why = steady_ok({**CALM, **change}, 305, 0.01, 0.7)
@@ -21,7 +21,7 @@ def test_each_condition_blocks_injection():
 
 
 def test_missing_optional_series_do_not_block():
-    # chua co su co nao tu khi controller khoi dong -> selfheal_incident_open chua co chuoi nao
+   
     ok, _ = steady_ok({**CALM, "incident": None, "err": None}, 305, 0.01, 0.7)
     assert ok
 

@@ -18,13 +18,29 @@ def sample_old(data: dict, n: int, rng) -> dict:
     return {k: v[idx] for k, v in data.items()}
 
 
+def sim_score(path: str) -> dict:
+    return summarize(evaluate_suite(RLPolicy(path)))
+
+
+def ensure_baseline(model, evaluate=sim_score, path: str = "models/current.zip") -> dict:
+
+    score = registry.current_score()
+    if score is None:
+        score = evaluate(path)
+        version = registry.register(model, score, note=f"truoc finetune ({path})")
+        registry.promote(version)
+        print(f"[baseline] {version} = {path}: {score}")
+    return score
+
+
 def main(rounds: int, episodes_per_round: int, steps_per_episode: int = 20) -> None:
     rng = np.random.default_rng(0)
     live = build_live_env(llm=True)
     venv = DummyVecEnv([lambda: ActionMasker(live, mask_fn)])
     model = MaskablePPO.load("models/current.zip", env=venv, device="cpu",
                              custom_objects={"n_steps": 64, "batch_size": 32, "learning_rate": 1e-4})
-    old = load_live_demos("data/experience")             
+    ensure_baseline(model)
+    old = load_live_demos("data/experience")
     for r in range(rounds):
         n_new = episodes_per_round * steps_per_episode
         model.learn(total_timesteps=n_new, reset_num_timesteps=False)          
@@ -32,7 +48,7 @@ def main(rounds: int, episodes_per_round: int, steps_per_episode: int = 20) -> N
             bc_pretrain(model, sample_old(old, int(n_new * 3 / 7), rng), epochs=3, lr=1e-5,
                         verbose=False)                                          
         model.save("models/_candidate")
-        score = summarize(evaluate_suite(RLPolicy("models/_candidate.zip")))
+        score = sim_score("models/_candidate.zip")
         version = registry.register(model, score, note=f"finetune round {r}")
         if registry.not_worse(score, registry.current_score()):
             registry.promote(version)

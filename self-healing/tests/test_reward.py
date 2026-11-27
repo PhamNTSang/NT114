@@ -7,7 +7,7 @@ def test_recovery_time_is_start_of_healthy_streak():
     flags = [False, False, True, True, True, True]
     paid = [tr.update(sla=f, healthy=f, replicas=1, proposed=Action.NO_OP, executed=Action.NO_OP)
             for f in flags]
-    assert tr.recovered and tr.t_recover_s == 30       # healthy tu buoc thu 3 (t = 30s)
+    assert tr.recovered and tr.t_recover_s == 30       
     assert paid == [False] * 5 + [True]
 
 
@@ -26,7 +26,7 @@ def test_unsafe_penalty_dominates():
 
 
 def test_no_living_reward_while_sla_ok():
-    # Dat SLA nhung chua phuc hoi -> khong duoc thuong duong (tranh agent keo dai su co)
+    
     r = compute_reward(sla=True, recovered_now=False, t_recover_s=0, extra_replicas=0,
                        unsafe=False, t_max_s=300)
     assert r == 0.0
